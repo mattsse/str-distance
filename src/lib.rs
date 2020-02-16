@@ -3,6 +3,7 @@
 #![allow(unused)]
 pub mod distances;
 
+pub mod jaro;
 pub mod levenshtein;
 mod utils;
 
@@ -28,7 +29,8 @@ where
 // drawbacks from trait: needs instance
 
 pub trait Distance {
-    // TODO make return type an associated type
+    // TODO make return type an associated type:
+    // type Dist;
     #[inline]
     fn distance<S, T>(&self, s1: S, s2: T) -> usize
     where
