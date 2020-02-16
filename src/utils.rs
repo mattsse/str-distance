@@ -56,15 +56,14 @@ pub(crate) fn delim_distinct<'a>(
     let prefix_len = count_eq(s1_iter.clone(), s2_iter.clone());
 
     let common_len = prefix_len + suffix_len;
-    let x = DelimDistinct {
+    DelimDistinct {
         suffix_len,
         prefix_len,
         s1_len: s1_len - common_len,
         s2_len: s2_len - common_len,
         distinct_s1: s1_iter.skip(prefix_len),
         distinct_s2: s2_iter.skip(prefix_len),
-    };
-    x
+    }
 }
 
 pub(crate) struct DelimDistinct<Iter: Iterator<Item = char>> {

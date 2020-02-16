@@ -31,7 +31,6 @@ where
 pub trait Distance {
     // TODO make return type an associated type:
     // type Dist;
-    #[inline]
     fn distance<S, T>(&self, s1: S, s2: T) -> usize
     where
         S: AsRef<str>,

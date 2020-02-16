@@ -120,10 +120,10 @@ impl DamerauLevenshtein {
             }
         }
 
-        let max_dist = self.max_distance.unwrap_or(delim.remaining_s2());
+        let max_dist = self.max_distance.unwrap_or_else(|| delim.remaining_s2());
 
         let mut v0 = Vec::with_capacity(delim.remaining_s2());
-        v0.extend((1..=max_dist));
+        v0.extend(1..=max_dist);
         for i in max_dist + 1..delim.remaining_s2() {
             v0.push(max_dist + 1);
         }
@@ -156,7 +156,7 @@ impl DamerauLevenshtein {
                 .clone()
                 .enumerate()
                 .skip(s2_start)
-                .take((s2_end - s2_start))
+                .take(s2_end - s2_start)
             {
                 let above = current;
                 let mut this_trans_cost = next_trans_cost;
