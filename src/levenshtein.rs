@@ -127,9 +127,10 @@ impl DamerauLevenshtein {
         for i in max_dist + 1..delim.remaining_s2() {
             v0.push(max_dist + 1);
         }
+
         let remaining_s2 = delim.remaining_s2();
 
-        // stores one level further back (offset by +1 position)
+        // stores one level further back
         let mut v2 = vec![0usize; remaining_s2];
         let s2_offset = max_dist - (remaining_s2 - delim.remaining_s1());
         let mut s1_tmp = delim.distinct_s1.clone().next().unwrap();
@@ -139,19 +140,18 @@ impl DamerauLevenshtein {
         let mut current = 0;
         // whether a check for exceeding a max dist is necessary
         let have_max = max_dist < remaining_s2;
-        for (i, c1) in delim.distinct_s1.enumerate() {
+
+        for (s1_idx, c1) in delim.distinct_s1.enumerate() {
             let left_c1 = s1_tmp;
             s1_tmp = c1;
-            //println!("iter {} value {} prevsChar {} sChar {}", i, current, prevsChar,
-            // sChar);
-            let mut left = i;
+            let mut left = s1_idx;
             current = left + 1;
             let mut next_trans_cost = 0;
 
-            s2_start += if i > s2_offset { 1 } else { 0 };
+            s2_start += if s1_idx > s2_offset { 1 } else { 0 };
             s2_end += if s2_end < remaining_s2 { 1 } else { 0 };
 
-            for (j, c2) in delim
+            for (s2_idx, c2) in delim
                 .distinct_s2
                 .clone()
                 .enumerate()
@@ -160,10 +160,12 @@ impl DamerauLevenshtein {
             {
                 let above = current;
                 let mut this_trans_cost = next_trans_cost;
-                next_trans_cost = v2[j];
-                v2[j] = left; // cost of diagonal (substitution)
+                next_trans_cost = v2[s2_idx];
+                // cost of diagonal (substitution)
+                v2[s2_idx] = left;
                 current = left;
-                left = v0[j]; // left now equals current cost (which will be diagonal at next iteration)
+                // left now equals current cost --> will be diagonal at next iteration
+                left = v0[s2_idx];
                 let left_c2 = s2_tmp;
                 s2_tmp = c2;
 
@@ -177,7 +179,8 @@ impl DamerauLevenshtein {
                         current = above;
                     }
                     current += 1;
-                    if (i != 0) && (j != 0) && (s1_tmp == left_c2) && (left_c1 == s2_tmp) {
+                    if (s1_idx != 0) && (s2_idx != 0) && (s1_tmp == left_c2) && (left_c1 == s2_tmp)
+                    {
                         this_trans_cost += 1;
                         if this_trans_cost < current {
                             // transposition
@@ -185,10 +188,10 @@ impl DamerauLevenshtein {
                         };
                     }
                 }
-                v0[j] = current;
+                v0[s2_idx] = current;
             }
 
-            if have_max && (v0[i + len_diff] > max_dist) {
+            if have_max && (v0[s1_idx + len_diff] > max_dist) {
                 return DistanceValue::Exceeded(max_dist);
             }
         }
@@ -197,6 +200,25 @@ impl DamerauLevenshtein {
             DistanceValue::Exact(current)
         } else {
             DistanceValue::Exceeded(max_dist)
+        }
+    }
+
+    pub fn normalized<S, T>(&self, s1: S, s2: T) -> f64
+    where
+        S: AsRef<str>,
+        T: AsRef<str>,
+    {
+        let s1 = s1.as_ref();
+        let s2 = s2.as_ref();
+
+        if s2.is_empty() && s1.is_empty() {
+            return 1.0;
+        }
+
+        if let DistanceValue::Exact(val) = self.distance(s1, s2) {
+            1.0 - (val as f64) / (s1.chars().count().max(s2.chars().count()) as f64)
+        } else {
+            1.0
         }
     }
 }

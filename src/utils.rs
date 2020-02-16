@@ -1,5 +1,6 @@
 use std::str::Chars;
 
+/// Return the shorter str as first index
 #[inline(always)]
 pub(crate) fn order_by_len_asc<'a>(s1: &'a str, s2: &'a str) -> (&'a str, &'a str) {
     if s1.len() <= s2.len() {
@@ -9,7 +10,35 @@ pub(crate) fn order_by_len_asc<'a>(s1: &'a str, s2: &'a str) -> (&'a str, &'a st
     }
 }
 
-/// return the len of common prefix and suffix chars, and the distinct left
+#[inline(always)]
+pub(crate) fn count_eq<Iter: Iterator<Item = char>>(mut s1_iter: Iter, mut s2_iter: Iter) -> usize {
+    let mut match_ctn = 0usize;
+    loop {
+        let c1 = match s1_iter.next() {
+            None => {
+                // "s2 ends with complete s1"
+                break;
+            }
+            Some(val) => val,
+        };
+
+        let c2 = match s2_iter.next() {
+            None => {
+                // "s1 ends with s2 complete"
+                break;
+            }
+            Some(val) => val,
+        };
+        if c1 == c2 {
+            match_ctn += 1;
+        } else {
+            break;
+        }
+    }
+    match_ctn
+}
+
+/// Return the len of common prefix and suffix chars, and the distinct left
 /// elements in between.
 #[inline(always)]
 pub(crate) fn delim_distinct<'a>(
@@ -18,37 +47,6 @@ pub(crate) fn delim_distinct<'a>(
 ) -> DelimDistinct<std::iter::Skip<std::iter::Take<std::str::Chars<'a>>>> {
     let s1_len = s1.chars().count();
     let s2_len = s2.chars().count();
-
-    // first detect num of chars that match at the end
-    // new iterator that takes until the
-
-    #[inline(always)]
-    fn count_eq<Iter: Iterator<Item = char>>(mut s1_iter: Iter, mut s2_iter: Iter) -> usize {
-        let mut match_ctn = 0usize;
-        loop {
-            let c1 = match s1_iter.next() {
-                None => {
-                    // "s2 ends with complete s1"
-                    break;
-                }
-                Some(val) => val,
-            };
-
-            let c2 = match s2_iter.next() {
-                None => {
-                    // "s1 ends with s2 complete"
-                    break;
-                }
-                Some(val) => val,
-            };
-            if c1 == c2 {
-                match_ctn += 1;
-            } else {
-                break;
-            }
-        }
-        match_ctn
-    }
 
     let suffix_len = count_eq(s1.chars().rev(), s2.chars().rev());
 
