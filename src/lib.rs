@@ -5,6 +5,7 @@ pub mod distances;
 
 pub mod jaro;
 pub mod levenshtein;
+pub mod ratcliff;
 mod utils;
 
 pub use levenshtein::{DamerauLevenshtein, Levenshtein};
