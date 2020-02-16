@@ -1,0 +1,19 @@
+[package]
+name = "str-distance"
+version = "0.1.0"
+authors = ["mattsse <matthias.seitz@tum.de>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rayon = "1.3.0"
+
+
+[dev-dependencies]
+criterion = "0.3"
+strsim = "0.10.0"
+
+
+[profile.bench]
+opt-level = 3
