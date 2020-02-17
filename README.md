@@ -6,6 +6,20 @@ str-distance
 
 WIP crate to evaluate distances between strings.
 
+## Distances
+
+- [Jaro Distance](https://en.wikipedia.org/wiki/Jaro%E2%80%93Winkler_distance)
+- [Levenshtein Distance](https://en.wikipedia.org/wiki/Levenshtein_distance)
+- [Damerau-Levenshtein Distance](https://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance) 
+- [RatcliffObershelp Distance](https://xlinux.nist.gov/dads/HTML/ratcliffObershelp.html)
+
+## References
+
+- [StringDistances](https://github.com/matthieugomez/StringDistances.jl)
+- [The stringdist Package for Approximate String Matching](https://journal.r-project.org/archive/2014-1/loo.pdf) Mark P.J. van der Loo
+- [fuzzywuzzy](http://chairnerd.seatgeek.com/fuzzywuzzy-fuzzy-string-matching-in-python/)
+
+
 ## License
 
 Licensed under either of these:
