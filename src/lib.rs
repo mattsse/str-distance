@@ -1,5 +1,6 @@
 //! Compute distances between strings
 
+#![forbid(unsafe_code)]
 #![allow(unused)]
 pub mod distances;
 
@@ -9,6 +10,7 @@ pub mod ratcliff;
 mod utils;
 
 pub use levenshtein::{DamerauLevenshtein, Levenshtein};
+pub use ratcliff::RatcliffObershelp;
 use std::ops::Deref;
 
 pub fn strdistance<S, T, D>(s1: S, s2: T, dist: D)

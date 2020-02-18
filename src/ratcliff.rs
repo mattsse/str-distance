@@ -1,5 +1,6 @@
 use crate::Distance;
 use std::collections::HashSet;
+use std::iter::{Skip, Take};
 use std::str::Chars;
 
 /// The distance between two strings is defined as one minus  the number of
@@ -21,12 +22,7 @@ impl RatcliffObershelp {
         let len1 = s1.chars().count();
         let len2 = s2.chars().count();
 
-        let m = SequenceMatcher::new(s1.chars(), s2.chars(), len1, len2);
-
-        let mut indices = HashSet::default();
-        m.match_sequences(&mut indices);
-
-        let matched: usize = indices.into_iter().map(|(_, _, i)| i).sum();
+        let matched = SequenceMatcher::new(s1.chars(), s2.chars(), len1, len2).match_sequences();
 
         if len1 + len2 == 0 {
             0.
@@ -36,21 +32,22 @@ impl RatcliffObershelp {
     }
 }
 
-struct SequenceMatcher<Iter: Iterator<Item = char> + Clone> {
-    s1: Iter,
-    s2: Iter,
+struct SequenceMatcher<'a> {
+    s1: Chars<'a>,
+    s2: Chars<'a>,
+    /// The length of iterator s1
     len1: usize,
+    /// The length of iterator s2
     len2: usize,
+    /// Index where the to start matching on s1
     start1: usize,
+    /// Index where the to start matching on s2
     start2: usize,
 }
 
-impl<Iter> SequenceMatcher<Iter>
-where
-    Iter: Iterator<Item = char> + Clone,
-{
+impl<'a> SequenceMatcher<'a> {
     #[inline]
-    fn new(s1: Iter, s2: Iter, len1: usize, len2: usize) -> Self {
+    fn new(s1: Chars<'a>, s2: Chars<'a>, len1: usize, len2: usize) -> Self {
         Self {
             len1,
             len2,
@@ -61,44 +58,48 @@ where
         }
     }
 
-    fn match_sequences(self, indices: &mut HashSet<(usize, usize, usize)>) {
-        let a = longest_common_substring(self.s1.clone(), self.s2.clone(), self.len1, self.len2);
-        if a.is_empty() {
+    /// Finds the longest substr of both `Chars` the recursively find the
+    /// longest substr of both tails.
+    fn match_sequences(self) -> usize {
+        let substr = longest_common_substring(
+            self.s1.clone().skip(self.start1).take(self.len1),
+            self.s2.clone().skip(self.start2).take(self.len2),
+            self.len1,
+            self.len2,
+        );
+
+        if substr.is_empty() {
             // stop if there is no common substring
-            return;
+            return 0;
         }
-        // cache the common substring
-        indices.insert((
-            a.s1_idx + self.start1 - 1,
-            a.s2_idx + self.start2 - 1,
-            a.len,
-        ));
+
+        let mut ctn = substr.len;
 
         // add the longest common substring that happens before
         let before = SequenceMatcher {
-            s1: self.s1.clone().take(a.s1_idx),
-            s2: self.s2.clone().take(a.s2_idx),
-            len1: a.s1_idx,
-            len2: a.s2_idx,
+            s1: self.s1.clone(),
+            s2: self.s2.clone(),
+            len1: substr.s1_idx,
+            len2: substr.s2_idx,
             start1: self.start1,
             start2: self.start2,
         };
-        before.match_sequences(indices);
+        ctn += before.match_sequences();
 
         // add the longest common substring that happens after
         let after = SequenceMatcher {
-            s1: self.s1.skip(a.s1_idx + a.len),
-            s2: self.s2.skip(a.s2_idx + a.len),
-            len1: self.len1 - (a.s1_idx + a.len),
-            len2: self.len2 - (a.s2_idx + a.len),
-            start1: self.start1 + a.s1_idx + a.len,
-            start2: self.start2 + a.s2_idx + a.len,
+            s1: self.s1,
+            s2: self.s2,
+            len1: self.len1 - (substr.s1_idx + substr.len),
+            len2: self.len2 - (substr.s2_idx + substr.len),
+            start1: self.start1 + substr.s1_idx + substr.len,
+            start2: self.start2 + substr.s2_idx + substr.len,
         };
-        after.match_sequences(indices);
+        ctn + after.match_sequences()
     }
 }
 
-struct CommonPattern {
+struct CommonSubstr {
     /// Start index of the pattern in str 1
     s1_idx: usize,
     /// Start index of the pattern in str 2
@@ -107,20 +108,20 @@ struct CommonPattern {
     len: usize,
 }
 
-impl CommonPattern {
+impl CommonSubstr {
     #[inline]
     fn is_empty(&self) -> bool {
         self.len == 0
     }
 }
 
-/// Find the longest common substring of both iterators.
+/// Find the longest common substr of both iterators.
 fn longest_common_substring<Iter: Iterator<Item = char> + Clone>(
     s1: Iter,
     s2: Iter,
     s1_len: usize,
     s2_len: usize,
-) -> CommonPattern {
+) -> CommonSubstr {
     if s1_len > s2_len {
         let mut seq = longest_common_substring(s2, s1, s2_len, s1_len);
         std::mem::swap(&mut seq.s1_idx, &mut seq.s2_idx);
@@ -145,7 +146,7 @@ fn longest_common_substring<Iter: Iterator<Item = char> + Clone>(
                 p[s2_idx] = newp;
             }
         }
-        CommonPattern {
+        CommonSubstr {
             s1_idx: start1,
             s2_idx: start2,
             len,
@@ -161,14 +162,57 @@ mod tests {
     fn common_substr() {
         let s1 = "aaabc";
         let s2 = "axaxbcaaa";
-        let pat = longest_common_substring(
+        let subs = longest_common_substring(
             s1.chars(),
             s2.chars(),
             s1.chars().count(),
             s2.chars().count(),
         );
-        assert_eq!(pat.s1_idx, 0);
-        assert_eq!(pat.s2_idx, 6);
-        assert_eq!(pat.len, 3);
+        assert_eq!(subs.s1_idx, 0);
+        assert_eq!(subs.s2_idx, 6);
+        assert_eq!(subs.len, 3);
+    }
+
+    #[test]
+    fn empty_common_substr() {
+        let subs = longest_common_substring("".chars(), "kitten".chars(), 0, 6);
+        assert!(subs.is_empty());
+    }
+
+    #[test]
+    fn ratcliff_obershelp() {
+        assert_eq!(RatcliffObershelp.distance("", "kitten"), 1.0);
+        assert_eq!(
+            format!(
+                "{:.6}",
+                RatcliffObershelp.distance("alexandre", "aleksander")
+            ),
+            "0.263158"
+        );
+        assert_eq!(
+            format!(
+                "{:.6}",
+                RatcliffObershelp.distance("pennsylvania", "pencilvaneya")
+            ),
+            "0.333333"
+        );
+        assert_eq!(
+            format!(
+                "{:.6}",
+                RatcliffObershelp.distance("abandonned", "abandoned")
+            ),
+            "0.052632"
+        );
+        assert_eq!(
+            format!(
+                "{:.6}",
+                RatcliffObershelp.distance("Result.unwrap()", "Result.unwarp()")
+            ),
+            "0.066667"
+        );
+        assert_eq!(
+            format!("{:.6}", RatcliffObershelp.distance("ahppen", "happen")),
+            "0.166667"
+        );
     }
 }
