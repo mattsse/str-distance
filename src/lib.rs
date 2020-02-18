@@ -19,6 +19,7 @@ where
     T: AsRef<str>,
     D: Distance,
 {
+    unimplemented!()
 }
 
 pub fn strcompare<S, T, D>(s1: S, s2: T, dist: D)
@@ -27,6 +28,7 @@ where
     T: AsRef<str>,
     D: Distance,
 {
+    unimplemented!()
 }
 
 // drawbacks from trait: needs instance
@@ -38,14 +40,6 @@ pub trait Distance {
     where
         S: AsRef<str>,
         T: AsRef<str>;
-
-    fn compare<S, T, U>(&self, s1: S, s2: T, min_score: U)
-    where
-        S: AsRef<str>,
-        T: AsRef<str>,
-        U: Into<Score>,
-    {
-    }
 }
 
 pub struct Score(pub f64);
