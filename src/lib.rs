@@ -2,7 +2,6 @@
 
 #![forbid(unsafe_code)]
 #![allow(unused)]
-pub mod distances;
 
 pub mod jaro;
 pub mod levenshtein;
