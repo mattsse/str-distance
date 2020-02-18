@@ -6,6 +6,7 @@ pub mod distances;
 
 pub mod jaro;
 pub mod levenshtein;
+pub mod qgram;
 pub mod ratcliff;
 mod utils;
 
