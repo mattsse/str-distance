@@ -13,7 +13,7 @@ pub use levenshtein::{DamerauLevenshtein, Levenshtein};
 pub use ratcliff::RatcliffObershelp;
 use std::ops::Deref;
 
-pub fn strdistance<S, T, D>(s1: S, s2: T, dist: D)
+pub fn strdistance<S, T, D>(a: S, b: T, dist: D)
 where
     S: AsRef<str>,
     T: AsRef<str>,
@@ -22,7 +22,7 @@ where
     unimplemented!()
 }
 
-pub fn strcompare<S, T, D>(s1: S, s2: T, dist: D)
+pub fn strcompare<S, T, D>(a: S, b: T, dist: D)
 where
     S: AsRef<str>,
     T: AsRef<str>,
@@ -36,7 +36,7 @@ where
 pub trait Distance {
     // TODO make return type an associated type:
     // type Dist;
-    fn distance<S, T>(&self, s1: S, s2: T) -> usize
+    fn distance<S, T>(&self, a: S, b: T) -> usize
     where
         S: AsRef<str>,
         T: AsRef<str>;
@@ -58,7 +58,7 @@ impl<T: AsRef<str>> DistanceElement for T {
         S: AsRef<str>,
         D: Distance,
     {
-        let s1 = self.as_ref();
+        let a = self.as_ref();
 
         unimplemented!()
     }
