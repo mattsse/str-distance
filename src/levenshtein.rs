@@ -14,7 +14,7 @@ impl Distance for Levenshtein {
         // make sure we use the shortest str for the outer loop
         let (s1, s2) = order_by_len_asc(s1.as_ref(), s2.as_ref());
 
-        // exclude matching prefix prefix and suffix
+        // exclude matching prefix and suffix
         let mut delim = delim_distinct(s1, s2);
 
         if delim.remaining_s1() == 0 {
@@ -109,8 +109,6 @@ impl DamerauLevenshtein {
             // the longer str starts or ends completely with the shorter str
             return DistanceValue::Exact(delim.remaining_s2());
         }
-
-        let mut i2_end = delim.remaining_s2();
 
         let len_diff = delim.remaining_s2() - delim.remaining_s1();
 

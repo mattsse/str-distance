@@ -1,7 +1,7 @@
 use std::str::Chars;
 
 /// Return the shorter str as first index
-#[inline(always)]
+#[inline]
 pub(crate) fn order_by_len_asc<'a>(s1: &'a str, s2: &'a str) -> (&'a str, &'a str) {
     if s1.len() <= s2.len() {
         (s1, s2)
@@ -10,13 +10,13 @@ pub(crate) fn order_by_len_asc<'a>(s1: &'a str, s2: &'a str) -> (&'a str, &'a st
     }
 }
 
-#[inline(always)]
+#[inline]
 pub(crate) fn count_eq<Iter: Iterator<Item = char>>(mut s1_iter: Iter, mut s2_iter: Iter) -> usize {
     let mut match_ctn = 0usize;
     loop {
         let c1 = match s1_iter.next() {
             None => {
-                // "s2 ends with complete s1"
+                // s2 ends with completely with s1"
                 break;
             }
             Some(val) => val,
@@ -24,7 +24,7 @@ pub(crate) fn count_eq<Iter: Iterator<Item = char>>(mut s1_iter: Iter, mut s2_it
 
         let c2 = match s2_iter.next() {
             None => {
-                // "s1 ends with s2 complete"
+                // s1 ends completely with s2
                 break;
             }
             Some(val) => val,
@@ -40,7 +40,7 @@ pub(crate) fn count_eq<Iter: Iterator<Item = char>>(mut s1_iter: Iter, mut s2_it
 
 /// Return the len of common prefix and suffix chars, and the distinct left
 /// elements in between.
-#[inline(always)]
+#[inline]
 pub(crate) fn delim_distinct<'a>(
     s1: &'a str,
     s2: &'a str,
