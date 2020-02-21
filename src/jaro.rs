@@ -1,11 +1,12 @@
 use crate::utils::{count_eq, order_by_len_asc};
-use crate::DistanceValue;
+use crate::{Distance, DistanceValue};
 
 pub struct Jaro;
 
-impl Jaro {
+impl Distance for Jaro {
+    type Dist = f64;
     #[inline]
-    pub fn distance<S, T>(&self, s1: S, s2: T) -> f64
+    fn distance<S, T>(&self, s1: S, s2: T) -> Self::Dist
     where
         S: AsRef<str>,
         T: AsRef<str>,
@@ -82,9 +83,10 @@ impl Jaro {
 
 pub struct JaroWinkler;
 
-impl JaroWinkler {
+impl Distance for JaroWinkler {
+    type Dist = f64;
     #[inline]
-    pub fn distance<S, T>(&self, s1: S, s2: T) -> f64
+    fn distance<S, T>(&self, s1: S, s2: T) -> Self::Dist
     where
         S: AsRef<str>,
         T: AsRef<str>,
