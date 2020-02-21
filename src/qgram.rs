@@ -229,25 +229,7 @@ impl Jaccard {
         let iter_a = QGramIter::new(&a, self.q);
         let iter_b = QGramIter::new(&b, self.q);
 
-        let (num_dist_a, num_dist_b, num_intersect) =
-            eq_map(iter_a, iter_b).values().cloned().fold(
-                (0usize, 0usize, 0usize),
-                |(num_dist_a, num_dist_b, num_intersect), (n1, n2)| {
-                    if n1 > 0 {
-                        if n2 > 0 {
-                            (num_dist_a + 1, num_dist_b + 1, num_intersect + 1)
-                        } else {
-                            (num_dist_a + 1, num_dist_b, num_intersect)
-                        }
-                    } else {
-                        if n2 > 0 {
-                            (num_dist_a, num_dist_b + 1, num_intersect)
-                        } else {
-                            (num_dist_a, num_dist_b, num_intersect)
-                        }
-                    }
-                },
-            );
+        let (num_dist_a, num_dist_b, num_intersect) = count_distinct_intersect(iter_a, iter_b);
 
         1.0 - num_intersect as f64 / ((num_dist_a + num_dist_b) as f64 - num_intersect as f64)
     }
@@ -302,27 +284,30 @@ impl SorensenDice {
         let iter_a = QGramIter::new(&a, self.q);
         let iter_b = QGramIter::new(&b, self.q);
 
-        let (num_dist_a, num_dist_b, num_intersect) =
-            eq_map(iter_a, iter_b).values().cloned().fold(
-                (0usize, 0usize, 0usize),
-                |(num_dist_a, num_dist_b, num_intersect), (n1, n2)| {
-                    if n1 > 0 {
-                        if n2 > 0 {
-                            (num_dist_a + 1, num_dist_b + 1, num_intersect + 1)
-                        } else {
-                            (num_dist_a + 1, num_dist_b, num_intersect)
-                        }
-                    } else {
-                        if n2 > 0 {
-                            (num_dist_a, num_dist_b + 1, num_intersect)
-                        } else {
-                            (num_dist_a, num_dist_b, num_intersect)
-                        }
-                    }
-                },
-            );
+        let (num_dist_a, num_dist_b, num_intersect) = count_distinct_intersect(iter_a, iter_b);
         1.0 - 2.0 * num_intersect as f64 / (num_dist_a + num_dist_b) as f64
     }
+}
+
+fn count_distinct_intersect(a: QGramIter, b: QGramIter) -> (usize, usize, usize) {
+    eq_map(a, b).values().cloned().fold(
+        (0, 0, 0),
+        |(num_dist_a, num_dist_b, num_intersect), (n1, n2)| {
+            if n1 > 0 {
+                if n2 > 0 {
+                    (num_dist_a + 1, num_dist_b + 1, num_intersect + 1)
+                } else {
+                    (num_dist_a + 1, num_dist_b, num_intersect)
+                }
+            } else {
+                if n2 > 0 {
+                    (num_dist_a, num_dist_b + 1, num_intersect)
+                } else {
+                    (num_dist_a, num_dist_b, num_intersect)
+                }
+            }
+        },
+    )
 }
 
 #[cfg(test)]
