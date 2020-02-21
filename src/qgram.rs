@@ -229,26 +229,99 @@ impl Jaccard {
         let iter_a = QGramIter::new(&a, self.q);
         let iter_b = QGramIter::new(&b, self.q);
 
-        let (num_dist_a, num_dist_b, num_intersect) = eq_map(iter_a, iter_b).values().cloned().fold(
-            (0usize, 0usize, 0usize),
-            |(num_dist_a, num_dist_b, num_intersect), (n1, n2)| {
-                if n1 > 0 {
-                    if n2 > 0 {
-                        (num_dist_a + 1, num_dist_b + 1, num_intersect + 1)
+        let (num_dist_a, num_dist_b, num_intersect) =
+            eq_map(iter_a, iter_b).values().cloned().fold(
+                (0usize, 0usize, 0usize),
+                |(num_dist_a, num_dist_b, num_intersect), (n1, n2)| {
+                    if n1 > 0 {
+                        if n2 > 0 {
+                            (num_dist_a + 1, num_dist_b + 1, num_intersect + 1)
+                        } else {
+                            (num_dist_a + 1, num_dist_b, num_intersect)
+                        }
                     } else {
-                        (num_dist_a + 1, num_dist_b, num_intersect)
+                        if n2 > 0 {
+                            (num_dist_a, num_dist_b + 1, num_intersect)
+                        } else {
+                            (num_dist_a, num_dist_b, num_intersect)
+                        }
                     }
-                } else {
-                    if n2 > 0 {
-                        (num_dist_a, num_dist_b + 1, num_intersect)
-                    } else {
-                        (num_dist_a, num_dist_b, num_intersect)
-                    }
-                }
-            },
-        );
+                },
+            );
 
         1.0 - num_intersect as f64 / ((num_dist_a + num_dist_b) as f64 - num_intersect as f64)
+    }
+}
+
+/// Represents a SorensenDice metric where `q` is the length of a q-gram
+/// fragment.
+///
+/// The distance corresponds to
+///
+/// ```text
+///     1 - 2 * |Q(s1, q) ∩ Q(s2, q)|  / (|Q(s1, q)| + |Q(s2, q))|)
+/// ```
+///
+/// where ``Q(s, q)``  denotes the set of q-grams of length n for the string s
+///
+/// If both inputs are empty a value of `1.` is returned. If one input is empty
+/// and the other is not, a value of `0.` is returned. This avoids a return of
+/// `f64::NaN` for those cases.
+#[derive(Debug, Clone)]
+pub struct SorensenDice {
+    /// Length of the fragment
+    q: usize,
+}
+
+impl SorensenDice {
+    /// Creates a new [`SorensenDice]` of length `q`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `q` is 0.
+    pub fn new(q: usize) -> Self {
+        assert_ne!(q, 0);
+        Self { q }
+    }
+}
+
+impl SorensenDice {
+    fn distance<S, T>(&self, a: S, b: T) -> f64
+    where
+        S: AsRef<str>,
+        T: AsRef<str>,
+    {
+        let a: Vec<_> = a.as_ref().chars().collect();
+        let b: Vec<_> = b.as_ref().chars().collect();
+
+        // edge case where an input is empty
+        if a.is_empty() || b.is_empty() {
+            return if a.len() == b.len() { 0. } else { 1. };
+        }
+
+        let iter_a = QGramIter::new(&a, self.q);
+        let iter_b = QGramIter::new(&b, self.q);
+
+        let (num_dist_a, num_dist_b, num_intersect) =
+            eq_map(iter_a, iter_b).values().cloned().fold(
+                (0usize, 0usize, 0usize),
+                |(num_dist_a, num_dist_b, num_intersect), (n1, n2)| {
+                    if n1 > 0 {
+                        if n2 > 0 {
+                            (num_dist_a + 1, num_dist_b + 1, num_intersect + 1)
+                        } else {
+                            (num_dist_a + 1, num_dist_b, num_intersect)
+                        }
+                    } else {
+                        if n2 > 0 {
+                            (num_dist_a, num_dist_b + 1, num_intersect)
+                        } else {
+                            (num_dist_a, num_dist_b, num_intersect)
+                        }
+                    }
+                },
+            );
+        1.0 - 2.0 * num_intersect as f64 / (num_dist_a + num_dist_b) as f64
     }
 }
 
@@ -289,6 +362,15 @@ mod tests {
             format!("{:.6}", Jaccard::new(1).distance("abc", "ccc")),
             "0.666667"
         );
+    }
+
+    #[test]
+    fn sorensen_dice_distance() {
+        assert_eq!(SorensenDice::new(1).distance("", ""), 0.);
+        assert_eq!(SorensenDice::new(3).distance("", "abc"), 1.);
+        assert_eq!(SorensenDice::new(3).distance("abc", "xxx"), 1.);
+        assert_eq!(SorensenDice::new(2).distance("monday", "montag"), 0.6);
+        assert_eq!(SorensenDice::new(2).distance("nacht", "night"), 0.75);
     }
 
     #[test]
