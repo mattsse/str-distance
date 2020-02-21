@@ -16,7 +16,7 @@ pub(crate) fn count_eq<Iter: Iterator<Item = char>>(mut s1_iter: Iter, mut s2_it
     loop {
         let c1 = match s1_iter.next() {
             None => {
-                // s2 ends with completely with s1"
+                // s2 ends with completely with s1
                 break;
             }
             Some(val) => val,

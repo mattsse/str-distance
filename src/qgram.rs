@@ -6,7 +6,9 @@ use crate::Distance;
 ///
 /// The distance corresponds to
 ///
-///  `||v(s1, q) - v(s2, q)||`
+///  ```text
+///     ||v(s1, q) - v(s2, q)||
+/// ```
 ///
 /// where `v(s, q)` denotes the vec on the space of q-grams of length q,
 /// that contains the number of times a q-gram fragment appears for the str s
@@ -125,7 +127,7 @@ impl<'a> Iterator for QGramIter<'a> {
 /// The Cosine distance corresponds to
 ///
 /// ```text
-/// 1 - v(s1, q).v(s2, q)  / ||v(s1, q)|| * ||v(s2, q)||
+///     1 - v(s1, q).v(s2, q)  / ||v(s1, q)|| * ||v(s2, q)||
 /// ```
 ///
 /// where `v(s, q)` denotes the vec on the space of q-grams of length q,
