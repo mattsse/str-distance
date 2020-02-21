@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::iter::{Skip, Take};
 use std::str::Chars;
 
-use crate::Distance;
+use crate::DistanceMetric;
 
 /// The distance between two strings is defined as one minus  the number of
 /// matching characters divided by the total number of characters in the two
@@ -11,7 +11,7 @@ use crate::Distance;
 /// side of the longest common subsequence.
 pub struct RatcliffObershelp;
 
-impl Distance for RatcliffObershelp {
+impl DistanceMetric for RatcliffObershelp {
     type Dist = f64;
     #[inline]
     fn distance<S, T>(&self, s1: S, s2: T) -> Self::Dist

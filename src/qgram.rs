@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::utils::order_by_len_asc;
-use crate::Distance;
+use crate::DistanceMetric;
 
 /// Represents a QGram metric where `q` is the length of a q-gram fragment.
 ///
@@ -31,7 +31,7 @@ impl QGram {
     }
 }
 
-impl Distance for QGram {
+impl DistanceMetric for QGram {
     type Dist = usize;
     fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
     where
@@ -106,7 +106,7 @@ impl Cosine {
     }
 }
 
-impl Distance for Cosine {
+impl DistanceMetric for Cosine {
     type Dist = f64;
     fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
     where
@@ -177,7 +177,7 @@ impl Jaccard {
     }
 }
 
-impl Distance for Jaccard {
+impl DistanceMetric for Jaccard {
     type Dist = f64;
     fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
     where
@@ -245,7 +245,7 @@ impl SorensenDice {
     }
 }
 
-impl Distance for SorensenDice {
+impl DistanceMetric for SorensenDice {
     type Dist = f64;
     fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
     where
@@ -312,7 +312,7 @@ impl Overlap {
     }
 }
 
-impl Distance for Overlap {
+impl DistanceMetric for Overlap {
     type Dist = f64;
     fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
     where
@@ -425,7 +425,7 @@ impl<'a> Iterator for QGramIter<'a> {
 /// If a str length < q, returns a == b
 fn normalized_qgram<Q, S, T>(metric: &Q, q: usize, a: S, b: T) -> Q::Dist
 where
-    Q: Distance<Dist = f64>,
+    Q: DistanceMetric<Dist = f64>,
     S: AsRef<str>,
     T: AsRef<str>,
 {

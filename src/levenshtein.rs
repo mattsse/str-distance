@@ -1,11 +1,11 @@
 use std::cmp::min;
 
 use crate::utils::{delim_distinct, order_by_len_asc, DelimDistinct};
-use crate::{Distance, DistanceValue};
+use crate::{DistanceMetric, DistanceValue};
 
 pub struct Levenshtein;
 
-impl Distance for Levenshtein {
+impl DistanceMetric for Levenshtein {
     type Dist = usize;
 
     #[inline]
@@ -95,7 +95,7 @@ impl DamerauLevenshtein {
     }
 }
 
-impl Distance for DamerauLevenshtein {
+impl DistanceMetric for DamerauLevenshtein {
     type Dist = DistanceValue;
     #[inline]
     fn distance<S, T>(&self, s1: S, s2: T) -> Self::Dist

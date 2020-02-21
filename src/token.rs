@@ -1,23 +1,23 @@
-use crate::Distance;
+use crate::DistanceMetric;
 
 /// A TokenSet distance modifies the distance of its `inner` `[Distance]` to
 /// adjust for differences in word orders and word numbers by comparing the
 /// intersection of two str with each str.
 ///
 /// http://chairnerd.seatgeek.com/fuzzywuzzy-fuzzy-string-matching-in-python/
-pub struct TokenSet<D: Distance> {
+pub struct TokenSet<D: DistanceMetric> {
     inner: D,
 }
 
-impl<D: Distance> TokenSet<D> {
+impl<D: DistanceMetric> TokenSet<D> {
     /// Create a new [`TokenSet`] distance metric using distance `D` as base.
     pub fn new(inner: D) -> Self {
         Self { inner }
     }
 }
 
-impl<D: Distance> Distance for TokenSet<D> {
-    type Dist = <D as Distance>::Dist;
+impl<D: DistanceMetric> DistanceMetric for TokenSet<D> {
+    type Dist = <D as DistanceMetric>::Dist;
 
     fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
     where
