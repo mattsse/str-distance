@@ -1,4 +1,5 @@
 use crate::Distance;
+use std::collections::HashMap;
 use std::slice::Chunks;
 
 /// Represents a QGram metric where `q` is the length of a q-gram fragment.
@@ -36,11 +37,31 @@ impl Distance for QGram {
         let a: Vec<_> = a.as_ref().chars().collect();
         let b: Vec<_> = b.as_ref().chars().collect();
 
-        0
+        let iter_a = QGramIter::new(&a, self.q);
+        let iter_b = QGramIter::new(&b, self.q);
+
+        eq_map(iter_a, iter_b)
+            .values()
+            .cloned()
+            .map(|(n1, n2)| if n1 > n2 { n1 - n2 } else { n2 - n1 })
+            .sum()
     }
 }
 
-fn count(mut a: QGramIter, mut b: QGramIter) {}
+fn eq_map<'a>(mut a: QGramIter<'a>, mut b: QGramIter<'a>) -> HashMap<&'a [char], (usize, usize)> {
+    let mut set = HashMap::new();
+
+    for qa in a {
+        let (x, _) = set.entry(qa).or_insert((0, 0));
+        *x += 1;
+    }
+    for qb in b {
+        let (_, y) = set.entry(qb).or_insert((0, 0));
+        *y += 1;
+    }
+
+    set
+}
 
 /// A Iterator that behaves similar to [`std::slice::Chunks`], but increases the
 /// start index into the slice only by one each iteration.
