@@ -6,8 +6,10 @@ use crate::{Distance, DistanceValue};
 pub struct Levenshtein;
 
 impl Distance for Levenshtein {
+    type Dist = usize;
+
     #[inline]
-    fn distance<S, T>(&self, s1: S, s2: T) -> usize
+    fn distance<S, T>(&self, s1: S, s2: T) -> Self::Dist
     where
         S: AsRef<str>,
         T: AsRef<str>,
@@ -93,9 +95,10 @@ impl DamerauLevenshtein {
     }
 }
 
-impl DamerauLevenshtein {
+impl Distance for DamerauLevenshtein {
+    type Dist = DistanceValue;
     #[inline]
-    pub fn distance<S, T>(&self, s1: S, s2: T) -> DistanceValue
+    fn distance<S, T>(&self, s1: S, s2: T) -> Self::Dist
     where
         S: AsRef<str>,
         T: AsRef<str>,
@@ -201,7 +204,9 @@ impl DamerauLevenshtein {
             DistanceValue::Exceeded(max_dist)
         }
     }
+}
 
+impl DamerauLevenshtein {
     pub fn normalized<S, T>(&self, s1: S, s2: T) -> f64
     where
         S: AsRef<str>,

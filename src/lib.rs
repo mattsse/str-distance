@@ -35,9 +35,8 @@ where
 // drawbacks from trait: needs instance
 
 pub trait Distance {
-    // TODO make return type an associated type:
-    // type Dist;
-    fn distance<S, T>(&self, a: S, b: T) -> usize
+    type Dist;
+    fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
     where
         S: AsRef<str>,
         T: AsRef<str>;

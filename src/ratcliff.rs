@@ -11,9 +11,10 @@ use crate::Distance;
 /// side of the longest common subsequence.
 pub struct RatcliffObershelp;
 
-impl RatcliffObershelp {
+impl Distance for RatcliffObershelp {
+    type Dist = f64;
     #[inline]
-    fn distance<S, T>(&self, s1: S, s2: T) -> f64
+    fn distance<S, T>(&self, s1: S, s2: T) -> Self::Dist
     where
         S: AsRef<str>,
         T: AsRef<str>,
