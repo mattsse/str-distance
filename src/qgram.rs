@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use crate::utils::order_by_len_asc;
 use crate::Distance;
 
 /// Represents a QGram metric where `q` is the length of a q-gram fragment.
@@ -31,7 +32,8 @@ impl QGram {
 }
 
 impl Distance for QGram {
-    fn distance<S, T>(&self, a: S, b: T) -> usize
+    type Dist = usize;
+    fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
     where
         S: AsRef<str>,
         T: AsRef<str>,
@@ -47,6 +49,301 @@ impl Distance for QGram {
             .cloned()
             .map(|(n1, n2)| if n1 > n2 { n1 - n2 } else { n2 - n1 })
             .sum()
+    }
+}
+
+impl QGram {
+    /// Normalize the metric, so that it returns always a f64 between 0 and 1.
+    /// If a str length < q, returns a == b
+    pub fn normalized<S, T>(&self, a: S, b: T) -> f64
+    where
+        S: AsRef<str>,
+        T: AsRef<str>,
+    {
+        let (a, b) = order_by_len_asc(a.as_ref(), b.as_ref());
+
+        let len_a = a.chars().count();
+        if len_a <= self.q {
+            if a == b {
+                0.
+            } else {
+                1.
+            }
+        } else {
+            let len_b = b.chars().count();
+            self.distance(a, b) as f64 / (len_a + len_b - 2 * self.q + 2) as f64
+        }
+    }
+}
+
+/// The Cosine distance corresponds to
+///
+/// ```text
+///     1 - v(s1, q).v(s2, q)  / ||v(s1, q)|| * ||v(s2, q)||
+/// ```
+///
+/// where `v(s, q)` denotes the vec on the space of q-grams of length q,
+/// that contains the  number of times a q-gram appears for the str s.
+///
+/// If both inputs are empty a value of `0.` is returned. If one input is empty
+/// and the other is not, a value of `1.` is returned. This avoids a return of
+/// `f64::NaN` for those cases.
+#[derive(Debug, Clone)]
+pub struct Cosine {
+    /// Length of the fragment
+    q: usize,
+}
+
+impl Cosine {
+    /// Creates a new [`Cosine]` metric of length `q`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `q` is 0.
+    pub fn new(q: usize) -> Self {
+        assert_ne!(q, 0);
+        Self { q }
+    }
+}
+
+impl Distance for Cosine {
+    type Dist = f64;
+    fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
+    where
+        S: AsRef<str>,
+        T: AsRef<str>,
+    {
+        let a: Vec<_> = a.as_ref().chars().collect();
+        let b: Vec<_> = b.as_ref().chars().collect();
+
+        // edge case where an input is empty
+        if a.is_empty() || b.is_empty() {
+            return if a.len() == b.len() { 0. } else { 1. };
+        }
+
+        let iter_a = QGramIter::new(&a, self.q);
+        let iter_b = QGramIter::new(&b, self.q);
+
+        let (norm_a, norm_b, norm_prod) = eq_map(iter_a, iter_b).values().cloned().fold(
+            (0usize, 0usize, 0usize),
+            |(norm_a, norm_b, norm_prod), (n1, n2)| {
+                (norm_a + n1 * n1, norm_b + n2 * n2, norm_prod + n1 * n2)
+            },
+        );
+        1.0 - norm_prod as f64 / ((norm_a as f64).sqrt() * (norm_b as f64).sqrt())
+    }
+}
+
+impl Cosine {
+    /// Normalize the metric, so that it returns always a f64 between 0 and 1.
+    /// If a str length < q, returns a == b
+    pub fn normalized<S, T>(&self, a: S, b: T) -> f64
+    where
+        S: AsRef<str>,
+        T: AsRef<str>,
+    {
+        normalized_qgram(self, self.q, a, b)
+    }
+}
+
+/// Represents a Jaccard metric where `q` is the length of a q-gram fragment.
+///
+/// The distance corresponds to
+///
+/// ```text
+///     1 - |Q(s1, q) ∩ Q(s2, q)| / |Q(s1, q) ∪ Q(s2, q))|
+/// ```
+///
+/// where ``Q(s, q)``  denotes the set of q-grams of length n for the str s.
+///
+/// If both inputs are empty a value of `0.` is returned. If one input is empty
+/// and the other is not, a value of `1.` is returned. This avoids a return of
+/// `f64::NaN` for those cases.
+#[derive(Debug, Clone)]
+pub struct Jaccard {
+    /// Length of the fragment
+    q: usize,
+}
+
+impl Jaccard {
+    /// Creates a new [`Jaccard]` of length `q`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `q` is 0.
+    pub fn new(q: usize) -> Self {
+        assert_ne!(q, 0);
+        Self { q }
+    }
+}
+
+impl Distance for Jaccard {
+    type Dist = f64;
+    fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
+    where
+        S: AsRef<str>,
+        T: AsRef<str>,
+    {
+        let a: Vec<_> = a.as_ref().chars().collect();
+        let b: Vec<_> = b.as_ref().chars().collect();
+
+        // edge case where an input is empty
+        if a.is_empty() || b.is_empty() {
+            return if a.len() == b.len() { 0. } else { 1. };
+        }
+
+        let iter_a = QGramIter::new(&a, self.q);
+        let iter_b = QGramIter::new(&b, self.q);
+
+        let (num_dist_a, num_dist_b, num_intersect) = count_distinct_intersect(iter_a, iter_b);
+
+        1.0 - num_intersect as f64 / ((num_dist_a + num_dist_b) as f64 - num_intersect as f64)
+    }
+}
+
+impl Jaccard {
+    /// Normalize the metric, so that it returns always a f64 between 0 and 1.
+    /// If a str length < q, returns a == b
+    pub fn normalized<S, T>(&self, a: S, b: T) -> f64
+    where
+        S: AsRef<str>,
+        T: AsRef<str>,
+    {
+        normalized_qgram(self, self.q, a, b)
+    }
+}
+
+/// Represents a SorensenDice metric where `q` is the length of a q-gram
+/// fragment.
+///
+/// The distance corresponds to
+///
+/// ```text
+///     1 - 2 * |Q(s1, q) ∩ Q(s2, q)|  / (|Q(s1, q)| + |Q(s2, q))|)
+/// ```
+///
+/// where `Q(s, q)`  denotes the set of q-grams of length n for the str s
+///
+/// If both inputs are empty a value of `1.` is returned. If one input is empty
+/// and the other is not, a value of `0.` is returned. This avoids a return of
+/// `f64::NaN` for those cases.
+#[derive(Debug, Clone)]
+pub struct SorensenDice {
+    /// Length of the fragment
+    q: usize,
+}
+
+impl SorensenDice {
+    /// Creates a new [`SorensenDice]` of length `q`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `q` is 0.
+    pub fn new(q: usize) -> Self {
+        assert_ne!(q, 0);
+        Self { q }
+    }
+}
+
+impl Distance for SorensenDice {
+    type Dist = f64;
+    fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
+    where
+        S: AsRef<str>,
+        T: AsRef<str>,
+    {
+        let a: Vec<_> = a.as_ref().chars().collect();
+        let b: Vec<_> = b.as_ref().chars().collect();
+
+        // edge case where an input is empty
+        if a.is_empty() || b.is_empty() {
+            return if a.len() == b.len() { 0. } else { 1. };
+        }
+
+        let iter_a = QGramIter::new(&a, self.q);
+        let iter_b = QGramIter::new(&b, self.q);
+
+        let (num_dist_a, num_dist_b, num_intersect) = count_distinct_intersect(iter_a, iter_b);
+        1.0 - 2.0 * num_intersect as f64 / (num_dist_a + num_dist_b) as f64
+    }
+}
+
+impl SorensenDice {
+    /// Normalize the metric, so that it returns always a f64 between 0 and 1.
+    /// If a str length < q, returns a == b
+    pub fn normalized<S, T>(&self, a: S, b: T) -> f64
+    where
+        S: AsRef<str>,
+        T: AsRef<str>,
+    {
+        normalized_qgram(self, self.q, a, b)
+    }
+}
+
+/// Represents a Overlap metric where `q` is the length of a q-gram
+/// fragment.
+///
+/// The distance corresponds to
+///
+/// ```text
+///     1 - |Q(s1, q) ∩ Q(s2, q)|  / min(|Q(s1, q)|, |Q(s2, q)|)
+/// ```
+///
+/// where `Q(s, q)`  denotes the set of q-grams of length n for the str s
+///
+/// If both inputs are empty a value of `1.` is returned. If one input is empty
+/// and the other is not, a value of `0.` is returned. This avoids a return of
+/// `f64::NaN` for those cases.
+#[derive(Debug, Clone)]
+pub struct Overlap {
+    /// Length of the fragment
+    q: usize,
+}
+
+impl Overlap {
+    /// Creates a new [`Overlap]` of length `q`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `q` is 0.
+    pub fn new(q: usize) -> Self {
+        assert_ne!(q, 0);
+        Self { q }
+    }
+}
+
+impl Distance for Overlap {
+    type Dist = f64;
+    fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
+    where
+        S: AsRef<str>,
+        T: AsRef<str>,
+    {
+        let a: Vec<_> = a.as_ref().chars().collect();
+        let b: Vec<_> = b.as_ref().chars().collect();
+
+        // edge case where an input is empty
+        if a.is_empty() || b.is_empty() {
+            return if a.len() == b.len() { 0. } else { 1. };
+        }
+
+        let iter_a = QGramIter::new(&a, self.q);
+        let iter_b = QGramIter::new(&b, self.q);
+
+        let (num_dist_a, num_dist_b, num_intersect) = count_distinct_intersect(iter_a, iter_b);
+        1.0 - num_intersect as f64 / num_dist_a.min(num_dist_b) as f64
+    }
+}
+
+impl Overlap {
+    /// Normalize the metric, so that it returns always a f64 between 0 and 1.
+    /// If a str length < q, returns a == b
+    pub fn normalized<S, T>(&self, a: S, b: T) -> f64
+    where
+        S: AsRef<str>,
+        T: AsRef<str>,
+    {
+        normalized_qgram(self, self.q, a, b)
     }
 }
 
@@ -124,222 +421,25 @@ impl<'a> Iterator for QGramIter<'a> {
     }
 }
 
-/// The Cosine distance corresponds to
-///
-/// ```text
-///     1 - v(s1, q).v(s2, q)  / ||v(s1, q)|| * ||v(s2, q)||
-/// ```
-///
-/// where `v(s, q)` denotes the vec on the space of q-grams of length q,
-/// that contains the  number of times a q-gram appears for the str s.
-///
-/// If both inputs are empty a value of `0.` is returned. If one input is empty
-/// and the other is not, a value of `1.` is returned. This avoids a return of
-/// `f64::NaN` for those cases.
-#[derive(Debug, Clone)]
-pub struct Cosine {
-    /// Length of the fragment
-    q: usize,
-}
+/// Normalize the metric, so that it returns always a f64 between 0 and 1.
+/// If a str length < q, returns a == b
+fn normalized_qgram<Q, S, T>(metric: &Q, q: usize, a: S, b: T) -> Q::Dist
+where
+    Q: Distance<Dist = f64>,
+    S: AsRef<str>,
+    T: AsRef<str>,
+{
+    let (a, b) = order_by_len_asc(a.as_ref(), b.as_ref());
 
-impl Cosine {
-    /// Creates a new [`Cosine]` metric of length `q`.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `q` is 0.
-    pub fn new(q: usize) -> Self {
-        assert_ne!(q, 0);
-        Self { q }
-    }
-}
-
-impl Cosine {
-    fn distance<S, T>(&self, a: S, b: T) -> f64
-    where
-        S: AsRef<str>,
-        T: AsRef<str>,
-    {
-        let a: Vec<_> = a.as_ref().chars().collect();
-        let b: Vec<_> = b.as_ref().chars().collect();
-
-        // edge case where an input is empty
-        if a.is_empty() || b.is_empty() {
-            return if a.len() == b.len() { 0. } else { 1. };
+    let len_a = a.chars().count();
+    if len_a <= q {
+        if a == b {
+            0.
+        } else {
+            1.
         }
-
-        let iter_a = QGramIter::new(&a, self.q);
-        let iter_b = QGramIter::new(&b, self.q);
-
-        let (norm_a, norm_b, norm_prod) = eq_map(iter_a, iter_b).values().cloned().fold(
-            (0usize, 0usize, 0usize),
-            |(norm_a, norm_b, norm_prod), (n1, n2)| {
-                (norm_a + n1 * n1, norm_b + n2 * n2, norm_prod + n1 * n2)
-            },
-        );
-        1.0 - norm_prod as f64 / ((norm_a as f64).sqrt() * (norm_b as f64).sqrt())
-    }
-}
-
-/// Represents a Jaccard metric where `q` is the length of a q-gram fragment.
-///
-/// The distance corresponds to
-///
-/// ```text
-///     1 - |Q(s1, q) ∩ Q(s2, q)| / |Q(s1, q) ∪ Q(s2, q))|
-/// ```
-///
-/// where ``Q(s, q)``  denotes the set of q-grams of length n for the str s.
-///
-/// If both inputs are empty a value of `0.` is returned. If one input is empty
-/// and the other is not, a value of `1.` is returned. This avoids a return of
-/// `f64::NaN` for those cases.
-#[derive(Debug, Clone)]
-pub struct Jaccard {
-    /// Length of the fragment
-    q: usize,
-}
-
-impl Jaccard {
-    /// Creates a new [`Jaccard]` of length `q`.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `q` is 0.
-    pub fn new(q: usize) -> Self {
-        assert_ne!(q, 0);
-        Self { q }
-    }
-}
-
-impl Jaccard {
-    fn distance<S, T>(&self, a: S, b: T) -> f64
-    where
-        S: AsRef<str>,
-        T: AsRef<str>,
-    {
-        let a: Vec<_> = a.as_ref().chars().collect();
-        let b: Vec<_> = b.as_ref().chars().collect();
-
-        // edge case where an input is empty
-        if a.is_empty() || b.is_empty() {
-            return if a.len() == b.len() { 0. } else { 1. };
-        }
-
-        let iter_a = QGramIter::new(&a, self.q);
-        let iter_b = QGramIter::new(&b, self.q);
-
-        let (num_dist_a, num_dist_b, num_intersect) = count_distinct_intersect(iter_a, iter_b);
-
-        1.0 - num_intersect as f64 / ((num_dist_a + num_dist_b) as f64 - num_intersect as f64)
-    }
-}
-
-/// Represents a SorensenDice metric where `q` is the length of a q-gram
-/// fragment.
-///
-/// The distance corresponds to
-///
-/// ```text
-///     1 - 2 * |Q(s1, q) ∩ Q(s2, q)|  / (|Q(s1, q)| + |Q(s2, q))|)
-/// ```
-///
-/// where `Q(s, q)`  denotes the set of q-grams of length n for the str s
-///
-/// If both inputs are empty a value of `1.` is returned. If one input is empty
-/// and the other is not, a value of `0.` is returned. This avoids a return of
-/// `f64::NaN` for those cases.
-#[derive(Debug, Clone)]
-pub struct SorensenDice {
-    /// Length of the fragment
-    q: usize,
-}
-
-impl SorensenDice {
-    /// Creates a new [`SorensenDice]` of length `q`.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `q` is 0.
-    pub fn new(q: usize) -> Self {
-        assert_ne!(q, 0);
-        Self { q }
-    }
-}
-
-impl SorensenDice {
-    fn distance<S, T>(&self, a: S, b: T) -> f64
-    where
-        S: AsRef<str>,
-        T: AsRef<str>,
-    {
-        let a: Vec<_> = a.as_ref().chars().collect();
-        let b: Vec<_> = b.as_ref().chars().collect();
-
-        // edge case where an input is empty
-        if a.is_empty() || b.is_empty() {
-            return if a.len() == b.len() { 0. } else { 1. };
-        }
-
-        let iter_a = QGramIter::new(&a, self.q);
-        let iter_b = QGramIter::new(&b, self.q);
-
-        let (num_dist_a, num_dist_b, num_intersect) = count_distinct_intersect(iter_a, iter_b);
-        1.0 - 2.0 * num_intersect as f64 / (num_dist_a + num_dist_b) as f64
-    }
-}
-
-/// Represents a Overlap metric where `q` is the length of a q-gram
-/// fragment.
-///
-/// The distance corresponds to
-///
-/// ```text
-///     1 - |Q(s1, q) ∩ Q(s2, q)|  / min(|Q(s1, q)|, |Q(s2, q)|)
-/// ```
-///
-/// where `Q(s, q)`  denotes the set of q-grams of length n for the str s
-///
-/// If both inputs are empty a value of `1.` is returned. If one input is empty
-/// and the other is not, a value of `0.` is returned. This avoids a return of
-/// `f64::NaN` for those cases.
-#[derive(Debug, Clone)]
-pub struct Overlap {
-    /// Length of the fragment
-    q: usize,
-}
-
-impl Overlap {
-    /// Creates a new [`Overlap]` of length `q`.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `q` is 0.
-    pub fn new(q: usize) -> Self {
-        assert_ne!(q, 0);
-        Self { q }
-    }
-}
-
-impl Overlap {
-    fn distance<S, T>(&self, a: S, b: T) -> f64
-    where
-        S: AsRef<str>,
-        T: AsRef<str>,
-    {
-        let a: Vec<_> = a.as_ref().chars().collect();
-        let b: Vec<_> = b.as_ref().chars().collect();
-
-        // edge case where an input is empty
-        if a.is_empty() || b.is_empty() {
-            return if a.len() == b.len() { 0. } else { 1. };
-        }
-
-        let iter_a = QGramIter::new(&a, self.q);
-        let iter_b = QGramIter::new(&b, self.q);
-
-        let (num_dist_a, num_dist_b, num_intersect) = count_distinct_intersect(iter_a, iter_b);
-        1.0 - num_intersect as f64 / num_dist_a.min(num_dist_b) as f64
+    } else {
+        metric.distance(a, b)
     }
 }
 
