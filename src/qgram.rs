@@ -122,12 +122,81 @@ impl<'a> Iterator for QGramIter<'a> {
     }
 }
 
-/// Cosine metric
-pub struct Cosine(pub usize);
+/// The Cosine distance corresponds to
+///
+/// ```text
+/// 1 - v(s1, q).v(s2, q)  / ||v(s1, q)|| * ||v(s2, q)||
+/// ```
+///
+/// where `v(s, q)` denotes the vec on the space of q-grams of length q,
+/// that contains the  number of times a q-gram appears for the string s
+#[derive(Debug, Clone)]
+pub struct Cosine {
+    /// Length of the fragment
+    q: usize,
+}
+
+impl Cosine {
+    /// Creates a new [`Cosine]` metric of length `q`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `q` is 0.
+    pub fn new(q: usize) -> Self {
+        assert_ne!(q, 0);
+        Self { q }
+    }
+}
+
+impl Cosine {
+    fn distance<S, T>(&self, a: S, b: T) -> f64
+    where
+        S: AsRef<str>,
+        T: AsRef<str>,
+    {
+        let a: Vec<_> = a.as_ref().chars().collect();
+        let b: Vec<_> = b.as_ref().chars().collect();
+
+        let iter_a = QGramIter::new(&a, self.q);
+        let iter_b = QGramIter::new(&b, self.q);
+
+        let (norm1, norm2, prodnorm) = eq_map(iter_a, iter_b).values().cloned().fold(
+            (0, 0, 0),
+            |(norm1, norm2, prodnorm), (n1, n2)| {
+                (norm1 + n1 * n1, norm2 + n2 * n2, prodnorm + n1 * n2)
+            },
+        );
+
+        1.0 - prodnorm as f64 / ((norm1 as f64).sqrt() * (norm2 as f64).sqrt())
+    }
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn qgram_distance() {
+        assert_eq!(QGram::new(2).distance("abc", "abc"), 0);
+        assert_eq!(QGram::new(1).distance("abc", "cba"), 0);
+        assert_eq!(QGram::new(1).distance("abc", "ccc"), 4);
+        assert_eq!(QGram::new(4).distance("aü☃", "aüaüafs"), 4);
+        assert_eq!(QGram::new(4).distance("abcdefg", "defgabc"), 6);
+    }
+
+    #[test]
+    fn cosine_distance() {
+        assert_eq!(Cosine::new(2).distance("abc", "ccc"), 1.);
+        assert_eq!(
+            format!("{:.6}", Cosine::new(2).distance("leia", "leela")),
+            "0.711325"
+        );
+        assert_eq!(
+            format!("{:.6}", Cosine::new(2).distance("achieve", "acheive")),
+            "0.500000"
+        );
+        assert_eq!(Cosine::new(3).distance("achieve", "acheive"), 0.8);
+    }
 
     #[test]
     fn qgram_iter() {
