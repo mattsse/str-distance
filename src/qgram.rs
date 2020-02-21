@@ -9,7 +9,7 @@ use crate::Distance;
 ///  ```text
 ///     ||v(s1, q) - v(s2, q)||
 /// ```
-///
+/// 
 /// where `v(s, q)` denotes the vec on the space of q-grams of length q,
 /// that contains the number of times a q-gram fragment appears for the str s
 #[derive(Debug, Clone)]
@@ -131,7 +131,11 @@ impl<'a> Iterator for QGramIter<'a> {
 /// ```
 ///
 /// where `v(s, q)` denotes the vec on the space of q-grams of length q,
-/// that contains the  number of times a q-gram appears for the string s
+/// that contains the  number of times a q-gram appears for the str s.
+///
+/// If both inputs are empty a value of `0.` is returned. If one input is empty
+/// and the other is not, a value of `1.` is returned. This avoids a return of
+/// `f64::NaN` for those cases.
 #[derive(Debug, Clone)]
 pub struct Cosine {
     /// Length of the fragment
