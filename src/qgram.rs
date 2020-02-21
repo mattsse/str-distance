@@ -267,6 +267,7 @@ mod tests {
 
     #[test]
     fn cosine_distance() {
+        assert_eq!(Cosine::new(1).distance("", ""), 0.);
         assert_eq!(Cosine::new(2).distance("abc", "ccc"), 1.);
         assert_eq!(
             format!("{:.6}", Cosine::new(2).distance("leia", "leela")),
@@ -277,6 +278,17 @@ mod tests {
             "0.500000"
         );
         assert_eq!(Cosine::new(3).distance("achieve", "acheive"), 0.8);
+    }
+
+    #[test]
+    fn jaccard_distance() {
+        assert_eq!(Jaccard::new(1).distance("", ""), 0.);
+        assert_eq!(Jaccard::new(1).distance("", "x"), 1.);
+        assert_eq!(Jaccard::new(3).distance("abc", "abc"), 0.);
+        assert_eq!(
+            format!("{:.6}", Jaccard::new(1).distance("abc", "ccc")),
+            "0.666667"
+        );
     }
 
     #[test]
