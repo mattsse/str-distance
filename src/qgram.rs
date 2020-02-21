@@ -163,17 +163,92 @@ impl Cosine {
         let a: Vec<_> = a.as_ref().chars().collect();
         let b: Vec<_> = b.as_ref().chars().collect();
 
+        // edge case where an input is empty
+        if a.is_empty() || b.is_empty() {
+            return if a.len() == b.len() { 0. } else { 1. };
+        }
+
         let iter_a = QGramIter::new(&a, self.q);
         let iter_b = QGramIter::new(&b, self.q);
 
-        let (norm1, norm2, prodnorm) = eq_map(iter_a, iter_b).values().cloned().fold(
-            (0, 0, 0),
-            |(norm1, norm2, prodnorm), (n1, n2)| {
-                (norm1 + n1 * n1, norm2 + n2 * n2, prodnorm + n1 * n2)
+        let (norm_a, norm_b, norm_prod) = eq_map(iter_a, iter_b).values().cloned().fold(
+            (0usize, 0usize, 0usize),
+            |(norm_a, norm_b, norm_prod), (n1, n2)| {
+                (norm_a + n1 * n1, norm_b + n2 * n2, norm_prod + n1 * n2)
+            },
+        );
+        1.0 - norm_prod as f64 / ((norm_a as f64).sqrt() * (norm_b as f64).sqrt())
+    }
+}
+
+/// Represents a Jaccard metric where `q` is the length of a q-gram fragment.
+///
+/// The distance corresponds to
+///
+/// ```text
+///     1 - |Q(s1, q) ∩ Q(s2, q)| / |Q(s1, q) ∪ Q(s2, q))|
+/// ```
+///
+/// where ``Q(s, q)``  denotes the set of q-grams of length n for the str s.
+///
+/// If both inputs are empty a value of `0.` is returned. If one input is empty
+/// and the other is not, a value of `1.` is returned. This avoids a return of
+/// `f64::NaN` for those cases.
+#[derive(Debug, Clone)]
+pub struct Jaccard {
+    /// Length of the fragment
+    q: usize,
+}
+
+impl Jaccard {
+    /// Creates a new [`Jaccard]` of length `q`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `q` is 0.
+    pub fn new(q: usize) -> Self {
+        assert_ne!(q, 0);
+        Self { q }
+    }
+}
+
+impl Jaccard {
+    fn distance<S, T>(&self, a: S, b: T) -> f64
+    where
+        S: AsRef<str>,
+        T: AsRef<str>,
+    {
+        let a: Vec<_> = a.as_ref().chars().collect();
+        let b: Vec<_> = b.as_ref().chars().collect();
+
+        // edge case where an input is empty
+        if a.is_empty() || b.is_empty() {
+            return if a.len() == b.len() { 0. } else { 1. };
+        }
+
+        let iter_a = QGramIter::new(&a, self.q);
+        let iter_b = QGramIter::new(&b, self.q);
+
+        let (num_dist_a, num_dist_b, num_intersect) = eq_map(iter_a, iter_b).values().cloned().fold(
+            (0usize, 0usize, 0usize),
+            |(num_dist_a, num_dist_b, num_intersect), (n1, n2)| {
+                if n1 > 0 {
+                    if n2 > 0 {
+                        (num_dist_a + 1, num_dist_b + 1, num_intersect + 1)
+                    } else {
+                        (num_dist_a + 1, num_dist_b, num_intersect)
+                    }
+                } else {
+                    if n2 > 0 {
+                        (num_dist_a, num_dist_b + 1, num_intersect)
+                    } else {
+                        (num_dist_a, num_dist_b, num_intersect)
+                    }
+                }
             },
         );
 
-        1.0 - prodnorm as f64 / ((norm1 as f64).sqrt() * (norm2 as f64).sqrt())
+        1.0 - num_intersect as f64 / ((num_dist_a + num_dist_b) as f64 - num_intersect as f64)
     }
 }
 
