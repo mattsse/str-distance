@@ -1,6 +1,7 @@
+use std::cmp::min;
+
 use crate::utils::{delim_distinct, order_by_len_asc, DelimDistinct};
 use crate::{Distance, DistanceValue};
-use std::cmp::min;
 
 pub struct Levenshtein;
 

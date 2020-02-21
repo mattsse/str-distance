@@ -1,7 +1,8 @@
-use crate::Distance;
 use std::collections::HashSet;
 use std::iter::{Skip, Take};
 use std::str::Chars;
+
+use crate::Distance;
 
 /// The distance between two strings is defined as one minus  the number of
 /// matching characters divided by the total number of characters in the two

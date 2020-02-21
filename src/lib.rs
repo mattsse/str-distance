@@ -3,15 +3,16 @@
 #![forbid(unsafe_code)]
 #![allow(unused)]
 
+use std::ops::Deref;
+
+pub use levenshtein::{DamerauLevenshtein, Levenshtein};
+pub use ratcliff::RatcliffObershelp;
+
 pub mod jaro;
 pub mod levenshtein;
 pub mod qgram;
 pub mod ratcliff;
 mod utils;
-
-pub use levenshtein::{DamerauLevenshtein, Levenshtein};
-pub use ratcliff::RatcliffObershelp;
-use std::ops::Deref;
 
 pub fn strdistance<S, T, D>(a: S, b: T, dist: D)
 where

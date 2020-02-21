@@ -1,6 +1,6 @@
-use crate::Distance;
 use std::collections::HashMap;
-use std::slice::Chunks;
+
+use crate::Distance;
 
 /// Represents a QGram metric where `q` is the length of a q-gram fragment.
 ///
