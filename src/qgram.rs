@@ -54,7 +54,7 @@ impl DistanceMetric for QGram {
 
     /// Normalize the metric, so that it returns always a f64 between 0 and 1.
     /// If a str length < q, returns a == b
-    fn normalized<S, T>(&self, a: S, b: T) -> f64
+    fn str_normalized<S, T>(&self, a: S, b: T) -> f64
     where
         S: AsRef<str>,
         T: AsRef<str>,
@@ -134,7 +134,7 @@ impl DistanceMetric for Cosine {
 
     /// Normalize the metric, so that it returns always a f64 between 0 and 1.
     /// If a str length < q, returns a == b
-    fn normalized<S, T>(&self, a: S, b: T) -> f64
+    fn str_normalized<S, T>(&self, a: S, b: T) -> f64
     where
         S: AsRef<str>,
         T: AsRef<str>,
@@ -199,7 +199,7 @@ impl DistanceMetric for Jaccard {
 
     /// Normalize the metric, so that it returns always a f64 between 0 and 1.
     /// If a str length < q, returns a == b
-    fn normalized<S, T>(&self, a: S, b: T) -> f64
+    fn str_normalized<S, T>(&self, a: S, b: T) -> f64
     where
         S: AsRef<str>,
         T: AsRef<str>,
@@ -271,7 +271,7 @@ impl DistanceMetric for SorensenDice {
 
     /// Normalize the metric, so that it returns always a f64 between 0 and 1.
     /// If a str length < q, returns a == b
-    fn normalized<S, T>(&self, a: S, b: T) -> f64
+    fn str_normalized<S, T>(&self, a: S, b: T) -> f64
     where
         S: AsRef<str>,
         T: AsRef<str>,
@@ -343,7 +343,7 @@ impl DistanceMetric for Overlap {
 
     /// Normalize the metric, so that it returns always a f64 between 0 and 1.
     /// If a str length < q, returns a == b
-    fn normalized<S, T>(&self, a: S, b: T) -> f64
+    fn str_normalized<S, T>(&self, a: S, b: T) -> f64
     where
         S: AsRef<str>,
         T: AsRef<str>,

@@ -144,7 +144,10 @@ mod tests {
 
         let s2 = "Barcelona vs Rel Madrid";
         assert_eq!(
-            format!("{:.6}", TokenSet::new(RatcliffObershelp).str_distance(s1, s2)),
+            format!(
+                "{:.6}",
+                TokenSet::new(RatcliffObershelp).str_distance(s1, s2)
+            ),
             "0.080000"
         );
     }

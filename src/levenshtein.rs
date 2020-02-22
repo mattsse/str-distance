@@ -73,7 +73,7 @@ impl DistanceMetric for Levenshtein {
         DistanceValue::Exact(result)
     }
 
-    fn normalized<S, T>(&self, a: S, b: T) -> f64
+    fn str_normalized<S, T>(&self, a: S, b: T) -> f64
     where
         S: AsRef<str>,
         T: AsRef<str>,
@@ -226,7 +226,7 @@ impl DistanceMetric for DamerauLevenshtein {
         }
     }
 
-    fn normalized<S, T>(&self, a: S, b: T) -> f64
+    fn str_normalized<S, T>(&self, a: S, b: T) -> f64
     where
         S: AsRef<str>,
         T: AsRef<str>,
@@ -265,7 +265,10 @@ mod tests {
     fn levenshtein_dist() {
         assert_eq!(*Levenshtein::default().str_distance("kitten", "sitting"), 3);
         assert_eq!(*Levenshtein::default().str_distance("", ""), 0);
-        assert_eq!(*Levenshtein::default().str_distance("sunday", "saturday"), 3);
+        assert_eq!(
+            *Levenshtein::default().str_distance("sunday", "saturday"),
+            3
+        );
         assert_eq!(*Levenshtein::default().str_distance("abc", ""), 3);
         let s1 = "The quick brown fox jumped over the angry dog.";
         let s2 = "Lorem ipsum dolor sit amet, dicta latine an eam.";
@@ -278,21 +281,24 @@ mod tests {
         assert_eq!(
             format!(
                 "{:.6}",
-                Levenshtein::default().normalized("kitten", "sitting")
+                Levenshtein::default().str_normalized("kitten", "sitting")
             ),
             "0.428571"
         );
-        assert_eq!(Levenshtein::default().normalized("", ""), 0.);
-        assert_eq!(Levenshtein::default().normalized("", "second"), 1.);
-        assert_eq!(Levenshtein::default().normalized("first", ""), 1.);
-        assert_eq!(Levenshtein::default().normalized("string", "string"), 0.);
+        assert_eq!(Levenshtein::default().str_normalized("", ""), 0.);
+        assert_eq!(Levenshtein::default().str_normalized("", "second"), 1.);
+        assert_eq!(Levenshtein::default().str_normalized("first", ""), 1.);
+        assert_eq!(Levenshtein::default().str_normalized("string", "string"), 0.);
     }
 
     #[test]
     fn damerau_levenshtein_dist() {
         assert_eq!(*DamerauLevenshtein::default().str_distance("", ""), 0);
         assert_eq!(*DamerauLevenshtein::default().str_distance("abc", ""), 3);
-        assert_eq!(*DamerauLevenshtein::default().str_distance("abc", "öঙ香"), 3);
+        assert_eq!(
+            *DamerauLevenshtein::default().str_distance("abc", "öঙ香"),
+            3
+        );
         assert_eq!(
             *DamerauLevenshtein::default().str_distance("damerau", "aderuaxyz"),
             6
@@ -316,12 +322,12 @@ mod tests {
 
     #[test]
     fn damerau_levenshtein_normalized() {
-        assert_eq!(DamerauLevenshtein::default().normalized("", ""), 0.);
-        assert_eq!(DamerauLevenshtein::default().normalized("", "second"), 1.);
+        assert_eq!(DamerauLevenshtein::default().str_normalized("", ""), 0.);
+        assert_eq!(DamerauLevenshtein::default().str_normalized("", "second"), 1.);
         assert_eq!(
             format!(
                 "{:.6}",
-                DamerauLevenshtein::default().normalized("kitten", "sitting")
+                DamerauLevenshtein::default().str_normalized("kitten", "sitting")
             ),
             "0.428571"
         );

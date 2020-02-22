@@ -70,7 +70,7 @@ where
     T: AsRef<str>,
     D: DistanceMetric,
 {
-    dist.normalized(a, b)
+    dist.str_normalized(a, b)
 }
 
 fn x() {
@@ -81,16 +81,26 @@ pub trait DistanceMetric {
     /// Represents the data type in which this distance is evaluated.
     type Dist: PartialOrd;
 
-    // TODO add separate function for strings (strdistance) and change api to accept
-    // iterators
+    /// Generic implementation of the metric.
+    fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
+    where
+        S: IntoIterator,
+        T: IntoIterator,
+        <S as IntoIterator>::Item: PartialEq<<T as IntoIterator>::Item>,
+    {
+        unimplemented!()
+    }
 
     /// Evaluates the distance between two str.
     fn str_distance<S, T>(&self, a: S, b: T) -> Self::Dist
     where
         S: AsRef<str>,
-        T: AsRef<str>;
+        T: AsRef<str>,
+    {
+        self.distance(a.as_ref().chars(), b.as_ref().chars())
+    }
 
-    fn normalized<S, T>(&self, a: S, b: T) -> f64
+    fn str_normalized<S, T>(&self, a: S, b: T) -> f64
     where
         S: AsRef<str>,
         T: AsRef<str>,
