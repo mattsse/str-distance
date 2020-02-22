@@ -13,30 +13,38 @@ pub struct RatcliffObershelp;
 
 impl DistanceMetric for RatcliffObershelp {
     type Dist = f64;
-    #[inline]
-    fn str_distance<S, T>(&self, s1: S, s2: T) -> Self::Dist
+
+    fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
     where
-        S: AsRef<str>,
-        T: AsRef<str>,
+        S: IntoIterator,
+        T: IntoIterator,
+        <S as IntoIterator>::IntoIter: Clone,
+        <T as IntoIterator>::IntoIter: Clone,
+        <S as IntoIterator>::Item: PartialEq<<T as IntoIterator>::Item>,
     {
-        let s1 = s1.as_ref();
-        let s2 = s2.as_ref();
-        let len1 = s1.chars().count();
-        let len2 = s2.chars().count();
+        let a = a.into_iter();
+        let b = b.into_iter();
+        let len_a = a.clone().count();
+        let len_b = b.clone().count();
 
-        let matched = SequenceMatcher::new(s1.chars(), s2.chars(), len1, len2).match_sequences();
+        let matched = SequenceMatcher::new(a, b, len_a, len_b).match_sequences();
 
-        if len1 + len2 == 0 {
+        if len_a + len_b == 0 {
             0.
         } else {
-            1.0 - 2. * matched as f64 / (len1 + len2) as f64
+            1.0 - 2. * matched as f64 / (len_a + len_b) as f64
         }
     }
 }
 
-struct SequenceMatcher<'a> {
-    s1: Chars<'a>,
-    s2: Chars<'a>,
+struct SequenceMatcher<S, T>
+where
+    S: Iterator + Clone,
+    T: Iterator + Clone,
+    <S as Iterator>::Item: PartialEq<<T as Iterator>::Item>,
+{
+    s1: S,
+    s2: T,
     /// The length of iterator s1
     len1: usize,
     /// The length of iterator s2
@@ -47,9 +55,14 @@ struct SequenceMatcher<'a> {
     start2: usize,
 }
 
-impl<'a> SequenceMatcher<'a> {
+impl<S, T> SequenceMatcher<S, T>
+where
+    S: Iterator + Clone,
+    T: Iterator + Clone,
+    <S as Iterator>::Item: PartialEq<<T as Iterator>::Item>,
+{
     #[inline]
-    fn new(s1: Chars<'a>, s2: Chars<'a>, len1: usize, len2: usize) -> Self {
+    fn new(s1: S, s2: T, len1: usize, len2: usize) -> Self {
         Self {
             len1,
             len2,
@@ -60,29 +73,29 @@ impl<'a> SequenceMatcher<'a> {
         }
     }
 
-    /// Finds the longest substr of both `Chars` the recursively find the
+    /// Finds the longest substr of both iters the recursively find the
     /// longest substr of both tails.
     fn match_sequences(self) -> usize {
-        let substr = longest_common_substring(
+        let subseq = longest_common_subsequence(
             self.s1.clone().skip(self.start1).take(self.len1),
             self.s2.clone().skip(self.start2).take(self.len2),
             self.len1,
             self.len2,
         );
 
-        if substr.is_empty() {
+        if subseq.is_empty() {
             // stop if there is no common substring
             return 0;
         }
 
-        let mut ctn = substr.len;
+        let mut ctn = subseq.len;
 
         // add the longest common substring that happens before
         let before = SequenceMatcher {
             s1: self.s1.clone(),
             s2: self.s2.clone(),
-            len1: substr.s1_idx,
-            len2: substr.s2_idx,
+            len1: subseq.s1_idx,
+            len2: subseq.s2_idx,
             start1: self.start1,
             start2: self.start2,
         };
@@ -92,25 +105,25 @@ impl<'a> SequenceMatcher<'a> {
         let after = SequenceMatcher {
             s1: self.s1,
             s2: self.s2,
-            len1: self.len1 - (substr.s1_idx + substr.len),
-            len2: self.len2 - (substr.s2_idx + substr.len),
-            start1: self.start1 + substr.s1_idx + substr.len,
-            start2: self.start2 + substr.s2_idx + substr.len,
+            len1: self.len1 - (subseq.s1_idx + subseq.len),
+            len2: self.len2 - (subseq.s2_idx + subseq.len),
+            start1: self.start1 + subseq.s1_idx + subseq.len,
+            start2: self.start2 + subseq.s2_idx + subseq.len,
         };
         ctn + after.match_sequences()
     }
 }
 
-struct CommonSubstr {
-    /// Start index of the pattern in str 1
+struct CommonSubseq {
+    /// Start index of the pattern in iter 1
     s1_idx: usize,
-    /// Start index of the pattern in str 2
+    /// Start index of the pattern in iter 2
     s2_idx: usize,
-    /// Length of the common pattern
+    /// Length of the common sequence
     len: usize,
 }
 
-impl CommonSubstr {
+impl CommonSubseq {
     #[inline]
     fn is_empty(&self) -> bool {
         self.len == 0
@@ -118,41 +131,35 @@ impl CommonSubstr {
 }
 
 /// Find the longest common substr of both iterators.
-fn longest_common_substring<Iter: Iterator<Item = char> + Clone>(
-    s1: Iter,
-    s2: Iter,
-    s1_len: usize,
-    s2_len: usize,
-) -> CommonSubstr {
-    if s1_len > s2_len {
-        let mut seq = longest_common_substring(s2, s1, s2_len, s1_len);
-        std::mem::swap(&mut seq.s1_idx, &mut seq.s2_idx);
-        seq
-    } else {
-        let mut p = vec![0usize; s2_len];
-        let (mut start1, mut start2, mut len) = (0, 0, 0);
-        for (s1_idx, c1) in s1.enumerate() {
-            let mut oldp = 0;
-            for (s2_idx, c2) in s2.clone().enumerate() {
-                let mut newp = 0;
-                if c1 == c2 {
-                    newp = if oldp > 0 { oldp } else { s2_idx };
-                    let current_len = s2_idx + 1 - newp;
-                    if current_len > len {
-                        start1 = s1_idx + 1 - current_len;
-                        start2 = newp;
-                        len = current_len;
-                    }
+fn longest_common_subsequence<S, T>(s1: S, s2: T, s1_len: usize, s2_len: usize) -> CommonSubseq
+where
+    S: Iterator + Clone,
+    T: Iterator + Clone,
+    <S as Iterator>::Item: PartialEq<<T as Iterator>::Item>,
+{
+    let mut p = vec![0usize; s2_len];
+    let (mut start1, mut start2, mut len) = (0, 0, 0);
+    for (s1_idx, c1) in s1.enumerate() {
+        let mut oldp = 0;
+        for (s2_idx, c2) in s2.clone().enumerate() {
+            let mut newp = 0;
+            if c1 == c2 {
+                newp = if oldp > 0 { oldp } else { s2_idx };
+                let current_len = s2_idx + 1 - newp;
+                if current_len > len {
+                    start1 = s1_idx + 1 - current_len;
+                    start2 = newp;
+                    len = current_len;
                 }
-                oldp = p[s2_idx];
-                p[s2_idx] = newp;
             }
+            oldp = p[s2_idx];
+            p[s2_idx] = newp;
         }
-        CommonSubstr {
-            s1_idx: start1,
-            s2_idx: start2,
-            len,
-        }
+    }
+    CommonSubseq {
+        s1_idx: start1,
+        s2_idx: start2,
+        len,
     }
 }
 
@@ -161,10 +168,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn common_substr() {
+    fn common_subseq() {
         let s1 = "aaabc";
         let s2 = "axaxbcaaa";
-        let subs = longest_common_substring(
+        let subs = longest_common_subsequence(
             s1.chars(),
             s2.chars(),
             s1.chars().count(),
@@ -176,8 +183,8 @@ mod tests {
     }
 
     #[test]
-    fn empty_common_substr() {
-        let subs = longest_common_substring("".chars(), "kitten".chars(), 0, 6);
+    fn empty_common_subseq() {
+        let subs = longest_common_subsequence("".chars(), "kitten".chars(), 0, 6);
         assert!(subs.is_empty());
     }
 

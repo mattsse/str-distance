@@ -11,7 +11,11 @@ pub(crate) fn order_by_len_asc<'a>(s1: &'a str, s2: &'a str) -> (&'a str, &'a st
 }
 
 #[inline]
-pub(crate) fn count_eq<Iter: Iterator<Item = char>>(mut s1_iter: Iter, mut s2_iter: Iter) -> usize {
+pub(crate) fn count_eq<Iter>(mut s1_iter: Iter, mut s2_iter: Iter) -> usize
+where
+    Iter: Iterator,
+    <Iter as Iterator>::Item: PartialEq,
+{
     let mut match_ctn = 0usize;
     loop {
         let c1 = match s1_iter.next() {
@@ -41,17 +45,18 @@ pub(crate) fn count_eq<Iter: Iterator<Item = char>>(mut s1_iter: Iter, mut s2_it
 /// Return the len of common prefix and suffix chars, and the distinct left
 /// elements in between.
 #[inline]
-pub(crate) fn delim_distinct<'a>(
-    s1: &'a str,
-    s2: &'a str,
-) -> DelimDistinct<std::iter::Skip<std::iter::Take<std::str::Chars<'a>>>> {
-    let s1_len = s1.chars().count();
-    let s2_len = s2.chars().count();
+pub(crate) fn delim_distinct<T>(s1: T, s2: T) -> DelimDistinct<std::iter::Skip<std::iter::Take<T>>>
+where
+    T: DoubleEndedIterator + Clone,
+    <T as Iterator>::Item: PartialEq,
+{
+    let s1_len = s1.clone().into_iter().count();
+    let s2_len = s2.clone().into_iter().count();
 
-    let suffix_len = count_eq(s1.chars().rev(), s2.chars().rev());
+    let suffix_len = count_eq(s1.clone().into_iter().rev(), s2.clone().into_iter().rev());
 
-    let mut s1_iter = s1.chars().take(s1_len - suffix_len);
-    let mut s2_iter = s2.chars().take(s2_len - suffix_len);
+    let mut s1_iter = s1.clone().into_iter().take(s1_len - suffix_len);
+    let mut s2_iter = s2.clone().into_iter().take(s2_len - suffix_len);
 
     let prefix_len = count_eq(s1_iter.clone(), s2_iter.clone());
 
@@ -66,7 +71,7 @@ pub(crate) fn delim_distinct<'a>(
     }
 }
 
-pub(crate) struct DelimDistinct<Iter: Iterator<Item = char>> {
+pub(crate) struct DelimDistinct<Iter: Iterator> {
     /// The amount of chars both str share at their beginning.
     pub prefix_len: usize,
     /// Iterator over the distinct chars of str s1
@@ -120,7 +125,7 @@ mod tests {
         let s1 = "kitten";
         let s2 = "sitting";
 
-        let delim = delim_distinct(s1, s2);
+        let delim = delim_distinct(s1.chars(), s2.chars());
         assert_eq!(delim.prefix_len, 0);
         assert_eq!(delim.suffix_len, 0);
         assert_eq!(delim.s1_len, 6);
@@ -132,7 +137,7 @@ mod tests {
         let s1 = "kitten";
         let s2 = "kitten";
 
-        let delim = delim_distinct(s1, s2);
+        let delim = delim_distinct(s1.chars(), s2.chars());
         assert_eq!(delim.common(), 6);
         assert_eq!(delim.remaining(), (0, 0));
         assert!(delim.is_eq());
@@ -143,14 +148,14 @@ mod tests {
         let s1 = "cute kitten";
         let s2 = "kitten";
 
-        let delim = delim_distinct(s1, s2);
+        let delim = delim_distinct(s1.chars(), s2.chars());
         assert_eq!(delim.common(), 6);
         assert_eq!(delim.remaining(), (5, 0));
         assert_eq!(delim.distinct_s1.collect::<String>(), String::from("cute "));
 
         let s1 = "k cute kitten";
         let s2 = "kitten";
-        let delim = delim_distinct(s1, s2);
+        let delim = delim_distinct(s1.chars(), s2.chars());
         assert_eq!(delim.common(), 6);
         assert_eq!(delim.remaining(), (7, 0));
         assert_eq!(
@@ -164,7 +169,7 @@ mod tests {
         let s1 = "hungry kitten";
         let s2 = "hungry hippo";
 
-        let delim = delim_distinct(s1, s2);
+        let delim = delim_distinct(s1.chars(), s2.chars());
         assert_eq!(delim.common(), 7);
         assert_eq!(delim.remaining(), (6, 5));
         assert_eq!(
@@ -179,7 +184,7 @@ mod tests {
         let s1 = "hungry kitten is hungry";
         let s2 = "hungry hippo is hungry";
 
-        let delim = delim_distinct(s1, s2);
+        let delim = delim_distinct(s1.chars(), s2.chars());
         assert_eq!(delim.common(), 17);
         assert_eq!(delim.remaining(), (6, 5));
         assert_eq!(

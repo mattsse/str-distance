@@ -23,7 +23,6 @@ impl Levenshtein {
 impl DistanceMetric for Levenshtein {
     type Dist = DistanceValue;
 
-    #[inline]
     fn str_distance<S, T>(&self, s1: S, s2: T) -> Self::Dist
     where
         S: AsRef<str>,
@@ -33,7 +32,7 @@ impl DistanceMetric for Levenshtein {
         let (s1, s2) = order_by_len_asc(s1.as_ref(), s2.as_ref());
 
         // exclude matching prefix and suffix
-        let mut delim = delim_distinct(s1, s2);
+        let mut delim = delim_distinct(s1.chars(), s2.chars());
 
         if delim.remaining_s1() == 0 {
             // the longer str starts or ends completely with the shorter str
@@ -118,7 +117,16 @@ impl DamerauLevenshtein {
 
 impl DistanceMetric for DamerauLevenshtein {
     type Dist = DistanceValue;
-    #[inline]
+
+    fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
+    where
+        S: IntoIterator,
+        T: IntoIterator,
+        <S as IntoIterator>::Item: PartialEq<<T as IntoIterator>::Item>,
+    {
+        unimplemented!()
+    }
+
     fn str_distance<S, T>(&self, s1: S, s2: T) -> Self::Dist
     where
         S: AsRef<str>,
@@ -128,7 +136,7 @@ impl DistanceMetric for DamerauLevenshtein {
         let (s1, s2) = order_by_len_asc(s1.as_ref(), s2.as_ref());
 
         // exclude matching prefix prefix and suffix
-        let mut delim = delim_distinct(s1, s2);
+        let mut delim = delim_distinct(s1.chars(), s2.chars());
 
         if delim.remaining_s1() == 0 {
             // the longer str starts or ends completely with the shorter str
@@ -288,7 +296,10 @@ mod tests {
         assert_eq!(Levenshtein::default().str_normalized("", ""), 0.);
         assert_eq!(Levenshtein::default().str_normalized("", "second"), 1.);
         assert_eq!(Levenshtein::default().str_normalized("first", ""), 1.);
-        assert_eq!(Levenshtein::default().str_normalized("string", "string"), 0.);
+        assert_eq!(
+            Levenshtein::default().str_normalized("string", "string"),
+            0.
+        );
     }
 
     #[test]
@@ -323,7 +334,10 @@ mod tests {
     #[test]
     fn damerau_levenshtein_normalized() {
         assert_eq!(DamerauLevenshtein::default().str_normalized("", ""), 0.);
-        assert_eq!(DamerauLevenshtein::default().str_normalized("", "second"), 1.);
+        assert_eq!(
+            DamerauLevenshtein::default().str_normalized("", "second"),
+            1.
+        );
         assert_eq!(
             format!(
                 "{:.6}",

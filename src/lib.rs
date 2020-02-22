@@ -86,6 +86,8 @@ pub trait DistanceMetric {
     where
         S: IntoIterator,
         T: IntoIterator,
+        <S as IntoIterator>::IntoIter: Clone,
+        <T as IntoIterator>::IntoIter: Clone,
         <S as IntoIterator>::Item: PartialEq<<T as IntoIterator>::Item>,
     {
         unimplemented!()
@@ -100,12 +102,25 @@ pub trait DistanceMetric {
         self.distance(a.as_ref().chars(), b.as_ref().chars())
     }
 
+    /// Generic implementation of the normalized metric.
+    fn normalized<S, T>(&self, a: S, b: T) -> f64
+    where
+        S: IntoIterator,
+        T: IntoIterator,
+        <S as IntoIterator>::IntoIter: Clone,
+        <T as IntoIterator>::IntoIter: Clone,
+        <S as IntoIterator>::Item: PartialEq<<T as IntoIterator>::Item>,
+    {
+        unimplemented!()
+    }
+
+    /// Convenience normalization for str types.
     fn str_normalized<S, T>(&self, a: S, b: T) -> f64
     where
         S: AsRef<str>,
         T: AsRef<str>,
     {
-        unimplemented!()
+        self.normalized(a.as_ref().chars(), b.as_ref().chars())
     }
 }
 
