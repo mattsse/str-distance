@@ -11,10 +11,11 @@ pub(crate) fn order_by_len_asc<'a>(s1: &'a str, s2: &'a str) -> (&'a str, &'a st
 }
 
 #[inline]
-pub(crate) fn count_eq<Iter>(mut s1_iter: Iter, mut s2_iter: Iter) -> usize
+pub(crate) fn count_eq<S, T>(mut s1_iter: S, mut s2_iter: T) -> usize
 where
-    Iter: Iterator,
-    <Iter as Iterator>::Item: PartialEq,
+    S: Iterator,
+    T: Iterator,
+    <S as Iterator>::Item: PartialEq<<T as Iterator>::Item>,
 {
     let mut match_ctn = 0usize;
     loop {
@@ -44,6 +45,7 @@ where
 
 /// Return the len of common prefix and suffix chars, and the distinct left
 /// elements in between.
+// TODO this needs to be changed to support different iter types and also doubleendediter
 #[inline]
 pub(crate) fn delim_distinct<T>(s1: T, s2: T) -> DelimDistinct<std::iter::Skip<std::iter::Take<T>>>
 where

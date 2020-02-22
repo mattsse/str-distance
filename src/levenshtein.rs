@@ -23,16 +23,67 @@ impl Levenshtein {
 impl DistanceMetric for Levenshtein {
     type Dist = DistanceValue;
 
-    fn str_distance<S, T>(&self, s1: S, s2: T) -> Self::Dist
+    fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
+    where
+        S: IntoIterator,
+        T: IntoIterator,
+        <S as IntoIterator>::IntoIter: Clone,
+        <T as IntoIterator>::IntoIter: Clone,
+        <S as IntoIterator>::Item: PartialEq<<T as IntoIterator>::Item>,
+    {
+        unimplemented!()
+        // // exclude matching prefix and suffix
+        // let mut delim = delim_distinct(a.into_iter(), b.into_iter());
+        //
+        // if delim.remaining_s1() == 0 {
+        //     // the longer str starts or ends completely with the shorter str
+        //     return DistanceValue::Exact(delim.remaining_s2());
+        // }
+        //
+        // if let Some(max_dist) = self.max_distance {
+        //     if delim.remaining_s2() - delim.remaining_s1() > max_dist {
+        //         return DistanceValue::Exceeded(max_dist);
+        //     }
+        // }
+        //
+        // let max_dist = self.max_distance.unwrap_or_else(||
+        // delim.remaining_s2());
+        //
+        // let mut cache: Vec<usize> = (1..=delim.remaining_s2()).collect();
+        //
+        // let mut result = 0;
+        //
+        // for (c1_idx, c1) in delim.distinct_s1.enumerate() {
+        //     result = c1_idx + 1;
+        //     let mut dist_c2 = c1_idx;
+        //     let mut min_dist = if c1_idx == 0 { 0 } else { c1_idx - 1 };
+        //
+        //     for (c2_idx, c2) in delim.distinct_s2.clone().enumerate() {
+        //         let cost = if c1 == c2 { 0usize } else { 1usize };
+        //         let dist_c1 = dist_c2 + cost;
+        //         dist_c2 = cache[c2_idx];
+        //         result = min(result + 1, min(dist_c1, dist_c2 + 1));
+        //         min_dist = min(min_dist, dist_c2);
+        //         cache[c2_idx] = result;
+        //     }
+        //     if min_dist > max_dist {
+        //         return DistanceValue::Exceeded(max_dist);
+        //     }
+        // }
+        //
+        // DistanceValue::Exact(result)
+    }
+
+    fn str_distance<S, T>(&self, a: S, b: T) -> Self::Dist
     where
         S: AsRef<str>,
         T: AsRef<str>,
     {
         // make sure we use the shortest str for the outer loop
-        let (s1, s2) = order_by_len_asc(s1.as_ref(), s2.as_ref());
+        let (a, b) = order_by_len_asc(a.as_ref(), b.as_ref());
 
         // exclude matching prefix and suffix
-        let mut delim = delim_distinct(s1.chars(), s2.chars());
+        let mut delim = delim_distinct(a.chars(), b.chars());
 
         if delim.remaining_s1() == 0 {
             // the longer str starts or ends completely with the shorter str
