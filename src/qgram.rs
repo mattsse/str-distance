@@ -33,7 +33,7 @@ impl QGram {
 
 impl DistanceMetric for QGram {
     type Dist = usize;
-    fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
+    fn str_distance<S, T>(&self, a: S, b: T) -> Self::Dist
     where
         S: AsRef<str>,
         T: AsRef<str>,
@@ -69,7 +69,7 @@ impl DistanceMetric for QGram {
             }
         } else {
             let len_b = b.chars().count();
-            self.distance(a, b) as f64 / (len_a + len_b - 2 * self.q + 2) as f64
+            self.str_distance(a, b) as f64 / (len_a + len_b - 2 * self.q + 2) as f64
         }
     }
 }
@@ -106,7 +106,7 @@ impl Cosine {
 
 impl DistanceMetric for Cosine {
     type Dist = f64;
-    fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
+    fn str_distance<S, T>(&self, a: S, b: T) -> Self::Dist
     where
         S: AsRef<str>,
         T: AsRef<str>,
@@ -175,7 +175,7 @@ impl Jaccard {
 
 impl DistanceMetric for Jaccard {
     type Dist = f64;
-    fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
+    fn str_distance<S, T>(&self, a: S, b: T) -> Self::Dist
     where
         S: AsRef<str>,
         T: AsRef<str>,
@@ -248,7 +248,7 @@ impl Default for SorensenDice {
 
 impl DistanceMetric for SorensenDice {
     type Dist = f64;
-    fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
+    fn str_distance<S, T>(&self, a: S, b: T) -> Self::Dist
     where
         S: AsRef<str>,
         T: AsRef<str>,
@@ -320,7 +320,7 @@ impl Default for Overlap {
 
 impl DistanceMetric for Overlap {
     type Dist = f64;
-    fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
+    fn str_distance<S, T>(&self, a: S, b: T) -> Self::Dist
     where
         S: AsRef<str>,
         T: AsRef<str>,
@@ -368,7 +368,7 @@ fn eq_map<'a>(mut a: QGramIter<'a>, mut b: QGramIter<'a>) -> HashMap<&'a [char],
 
 /// A Iterator that behaves similar to [`std::slice::Chunks`], but increases the
 /// start index into the slice only by one each iteration.
-struct QGramIter<'a> {
+pub(crate) struct QGramIter<'a> {
     items: &'a [char],
     index: usize,
     chunk_size: usize,
@@ -443,7 +443,7 @@ where
             1.
         }
     } else {
-        metric.distance(a, b)
+        metric.str_distance(a, b)
     }
 }
 
@@ -474,47 +474,47 @@ mod tests {
 
     #[test]
     fn qgram_distance() {
-        assert_eq!(QGram::new(2).distance("abc", "abc"), 0);
-        assert_eq!(QGram::new(1).distance("abc", "cba"), 0);
-        assert_eq!(QGram::new(1).distance("abc", "ccc"), 4);
-        assert_eq!(QGram::new(4).distance("aü☃", "aüaüafs"), 4);
-        assert_eq!(QGram::new(4).distance("abcdefg", "defgabc"), 6);
+        assert_eq!(QGram::new(2).str_distance("abc", "abc"), 0);
+        assert_eq!(QGram::new(1).str_distance("abc", "cba"), 0);
+        assert_eq!(QGram::new(1).str_distance("abc", "ccc"), 4);
+        assert_eq!(QGram::new(4).str_distance("aü☃", "aüaüafs"), 4);
+        assert_eq!(QGram::new(4).str_distance("abcdefg", "defgabc"), 6);
     }
 
     #[test]
     fn cosine_distance() {
-        assert_eq!(Cosine::new(1).distance("", ""), 0.);
-        assert_eq!(Cosine::new(2).distance("abc", "ccc"), 1.);
+        assert_eq!(Cosine::new(1).str_distance("", ""), 0.);
+        assert_eq!(Cosine::new(2).str_distance("abc", "ccc"), 1.);
         assert_eq!(
-            format!("{:.6}", Cosine::new(2).distance("leia", "leela")),
+            format!("{:.6}", Cosine::new(2).str_distance("leia", "leela")),
             "0.711325"
         );
         assert_eq!(
-            format!("{:.6}", Cosine::new(2).distance("achieve", "acheive")),
+            format!("{:.6}", Cosine::new(2).str_distance("achieve", "acheive")),
             "0.500000"
         );
-        assert_eq!(Cosine::new(3).distance("achieve", "acheive"), 0.8);
+        assert_eq!(Cosine::new(3).str_distance("achieve", "acheive"), 0.8);
     }
 
     #[test]
     fn jaccard_distance() {
-        assert_eq!(Jaccard::new(1).distance("", ""), 0.);
-        assert_eq!(Jaccard::new(1).distance("", "x"), 1.);
-        assert_eq!(Jaccard::new(3).distance("abc", "abc"), 0.);
+        assert_eq!(Jaccard::new(1).str_distance("", ""), 0.);
+        assert_eq!(Jaccard::new(1).str_distance("", "x"), 1.);
+        assert_eq!(Jaccard::new(3).str_distance("abc", "abc"), 0.);
         assert_eq!(
-            format!("{:.6}", Jaccard::new(1).distance("abc", "ccc")),
+            format!("{:.6}", Jaccard::new(1).str_distance("abc", "ccc")),
             "0.666667"
         );
     }
 
     #[test]
     fn sorensen_dice_distance() {
-        assert_eq!(SorensenDice::new(1).distance("", ""), 0.);
-        assert_eq!(SorensenDice::new(3).distance("", "abc"), 1.);
-        assert_eq!(SorensenDice::new(3).distance("abc", "abc"), 0.);
-        assert_eq!(SorensenDice::new(3).distance("abc", "xxx"), 1.);
-        assert_eq!(SorensenDice::new(2).distance("monday", "montag"), 0.6);
-        assert_eq!(SorensenDice::new(2).distance("nacht", "night"), 0.75);
+        assert_eq!(SorensenDice::new(1).str_distance("", ""), 0.);
+        assert_eq!(SorensenDice::new(3).str_distance("", "abc"), 1.);
+        assert_eq!(SorensenDice::new(3).str_distance("abc", "abc"), 0.);
+        assert_eq!(SorensenDice::new(3).str_distance("abc", "xxx"), 1.);
+        assert_eq!(SorensenDice::new(2).str_distance("monday", "montag"), 0.6);
+        assert_eq!(SorensenDice::new(2).str_distance("nacht", "night"), 0.75);
 
         // 1-
         // assert_eq!(SorensenDice::new(2).distance("nacht", "night"),
@@ -523,15 +523,15 @@ mod tests {
 
     #[test]
     fn overlap_distance() {
-        assert_eq!(SorensenDice::new(1).distance("", ""), 0.);
-        assert_eq!(SorensenDice::new(1).distance("", "abc"), 1.);
-        assert_eq!(SorensenDice::new(3).distance("abc", "abc"), 0.);
-        assert_eq!(SorensenDice::new(3).distance("abc", "xxx"), 1.);
+        assert_eq!(SorensenDice::new(1).str_distance("", ""), 0.);
+        assert_eq!(SorensenDice::new(1).str_distance("", "abc"), 1.);
+        assert_eq!(SorensenDice::new(3).str_distance("abc", "abc"), 0.);
+        assert_eq!(SorensenDice::new(3).str_distance("abc", "xxx"), 1.);
         assert_eq!(
-            format!("{:.6}", SorensenDice::new(1).distance("monday", "montag")),
+            format!("{:.6}", SorensenDice::new(1).str_distance("monday", "montag")),
             "0.333333"
         );
-        assert_eq!(SorensenDice::new(1).distance("nacht", "night"), 0.4);
+        assert_eq!(SorensenDice::new(1).str_distance("nacht", "night"), 0.4);
     }
 
     #[test]

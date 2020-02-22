@@ -14,7 +14,7 @@ pub struct RatcliffObershelp;
 impl DistanceMetric for RatcliffObershelp {
     type Dist = f64;
     #[inline]
-    fn distance<S, T>(&self, s1: S, s2: T) -> Self::Dist
+    fn str_distance<S, T>(&self, s1: S, s2: T) -> Self::Dist
     where
         S: AsRef<str>,
         T: AsRef<str>,
@@ -183,37 +183,37 @@ mod tests {
 
     #[test]
     fn ratcliff_obershelp() {
-        assert_eq!(RatcliffObershelp.distance("", "kitten"), 1.0);
+        assert_eq!(RatcliffObershelp.str_distance("", "kitten"), 1.0);
         assert_eq!(
             format!(
                 "{:.6}",
-                RatcliffObershelp.distance("alexandre", "aleksander")
+                RatcliffObershelp.str_distance("alexandre", "aleksander")
             ),
             "0.263158"
         );
         assert_eq!(
             format!(
                 "{:.6}",
-                RatcliffObershelp.distance("pennsylvania", "pencilvaneya")
+                RatcliffObershelp.str_distance("pennsylvania", "pencilvaneya")
             ),
             "0.333333"
         );
         assert_eq!(
             format!(
                 "{:.6}",
-                RatcliffObershelp.distance("abandonned", "abandoned")
+                RatcliffObershelp.str_distance("abandonned", "abandoned")
             ),
             "0.052632"
         );
         assert_eq!(
             format!(
                 "{:.6}",
-                RatcliffObershelp.distance("Result.unwrap()", "Result.unwarp()")
+                RatcliffObershelp.str_distance("Result.unwrap()", "Result.unwarp()")
             ),
             "0.066667"
         );
         assert_eq!(
-            format!("{:.6}", RatcliffObershelp.distance("ahppen", "happen")),
+            format!("{:.6}", RatcliffObershelp.str_distance("ahppen", "happen")),
             "0.166667"
         );
     }

@@ -24,7 +24,7 @@ impl DistanceMetric for Levenshtein {
     type Dist = DistanceValue;
 
     #[inline]
-    fn distance<S, T>(&self, s1: S, s2: T) -> Self::Dist
+    fn str_distance<S, T>(&self, s1: S, s2: T) -> Self::Dist
     where
         S: AsRef<str>,
         T: AsRef<str>,
@@ -119,7 +119,7 @@ impl DamerauLevenshtein {
 impl DistanceMetric for DamerauLevenshtein {
     type Dist = DistanceValue;
     #[inline]
-    fn distance<S, T>(&self, s1: S, s2: T) -> Self::Dist
+    fn str_distance<S, T>(&self, s1: S, s2: T) -> Self::Dist
     where
         S: AsRef<str>,
         T: AsRef<str>,
@@ -244,7 +244,7 @@ where
     let a = a.as_ref();
     let b = b.as_ref();
 
-    if let DistanceValue::Exact(val) = dist.distance(a, b) {
+    if let DistanceValue::Exact(val) = dist.str_distance(a, b) {
         let len_a = a.chars().count();
         let len_b = b.chars().count();
         if len_a + len_b == 0 {
@@ -263,14 +263,14 @@ mod tests {
 
     #[test]
     fn levenshtein_dist() {
-        assert_eq!(*Levenshtein::default().distance("kitten", "sitting"), 3);
-        assert_eq!(*Levenshtein::default().distance("", ""), 0);
-        assert_eq!(*Levenshtein::default().distance("sunday", "saturday"), 3);
-        assert_eq!(*Levenshtein::default().distance("abc", ""), 3);
+        assert_eq!(*Levenshtein::default().str_distance("kitten", "sitting"), 3);
+        assert_eq!(*Levenshtein::default().str_distance("", ""), 0);
+        assert_eq!(*Levenshtein::default().str_distance("sunday", "saturday"), 3);
+        assert_eq!(*Levenshtein::default().str_distance("abc", ""), 3);
         let s1 = "The quick brown fox jumped over the angry dog.";
         let s2 = "Lorem ipsum dolor sit amet, dicta latine an eam.";
-        assert_eq!(*Levenshtein::default().distance(s1, s2), 37);
-        assert_eq!(*Levenshtein::with_max_distance(10).distance(s1, s2), 10);
+        assert_eq!(*Levenshtein::default().str_distance(s1, s2), 37);
+        assert_eq!(*Levenshtein::with_max_distance(10).str_distance(s1, s2), 10);
     }
 
     #[test]
@@ -290,26 +290,26 @@ mod tests {
 
     #[test]
     fn damerau_levenshtein_dist() {
-        assert_eq!(*DamerauLevenshtein::default().distance("", ""), 0);
-        assert_eq!(*DamerauLevenshtein::default().distance("abc", ""), 3);
-        assert_eq!(*DamerauLevenshtein::default().distance("abc", "öঙ香"), 3);
+        assert_eq!(*DamerauLevenshtein::default().str_distance("", ""), 0);
+        assert_eq!(*DamerauLevenshtein::default().str_distance("abc", ""), 3);
+        assert_eq!(*DamerauLevenshtein::default().str_distance("abc", "öঙ香"), 3);
         assert_eq!(
-            *DamerauLevenshtein::default().distance("damerau", "aderuaxyz"),
+            *DamerauLevenshtein::default().str_distance("damerau", "aderuaxyz"),
             6
         );
         assert_eq!(
-            *DamerauLevenshtein::default().distance("jellyifhs", "jellyfish"),
+            *DamerauLevenshtein::default().str_distance("jellyifhs", "jellyfish"),
             2
         );
         assert_eq!(
-            *DamerauLevenshtein::default().distance("cape sand recycling ", "edith ann graham"),
+            *DamerauLevenshtein::default().str_distance("cape sand recycling ", "edith ann graham"),
             17
         );
         let s1 = "The quick brown fox jumped over the angry dog.";
         let s2 = "Lehem ipsum dolor sit amet, dicta latine an eam.";
-        assert_eq!(*DamerauLevenshtein::default().distance(s1, s2), 36);
+        assert_eq!(*DamerauLevenshtein::default().str_distance(s1, s2), 36);
         assert_eq!(
-            DamerauLevenshtein::with_max_distance(10).distance(s1, s2),
+            DamerauLevenshtein::with_max_distance(10).str_distance(s1, s2),
             DistanceValue::Exceeded(10)
         );
     }
@@ -341,7 +341,7 @@ He drank life before spitting it out.
 Dan ate the clouds like cotton candy.";
 
         assert_eq!(
-            *DamerauLevenshtein::default().distance(s1, s2),
+            *DamerauLevenshtein::default().str_distance(s1, s2),
             strsim::damerau_levenshtein(s1, s2)
         );
     }

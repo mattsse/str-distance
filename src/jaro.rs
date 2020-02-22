@@ -6,7 +6,7 @@ pub struct Jaro;
 impl DistanceMetric for Jaro {
     type Dist = f64;
     #[inline]
-    fn distance<S, T>(&self, s1: S, s2: T) -> Self::Dist
+    fn str_distance<S, T>(&self, s1: S, s2: T) -> Self::Dist
     where
         S: AsRef<str>,
         T: AsRef<str>,
@@ -86,14 +86,14 @@ pub struct JaroWinkler;
 impl DistanceMetric for JaroWinkler {
     type Dist = f64;
     #[inline]
-    fn distance<S, T>(&self, s1: S, s2: T) -> Self::Dist
+    fn str_distance<S, T>(&self, s1: S, s2: T) -> Self::Dist
     where
         S: AsRef<str>,
         T: AsRef<str>,
     {
         let s1 = s1.as_ref();
         let s2 = s2.as_ref();
-        let mut dist = Jaro.distance(s1, s2);
+        let mut dist = Jaro.str_distance(s1, s2);
 
         let prefix_ctn = count_eq(s1.chars(), s2.chars());
 
@@ -114,8 +114,8 @@ mod tests {
     /// https://github.com/apache/commons-text/blob/master/src/main/java/org/apache/commons/text/similarity/JaroWinklerDistance.java
     #[test]
     fn jaro_winkler() {
-        assert_eq!(JaroWinkler.distance("", ""), 0.0);
-        assert_eq!(JaroWinkler.distance("foo", "foo"), 0.0);
+        assert_eq!(JaroWinkler.str_distance("", ""), 0.0);
+        assert_eq!(JaroWinkler.str_distance("foo", "foo"), 0.0);
         //        assert_eq!(JaroWinkler.distance("foo", "foo "), 0.06);
         //        assert_eq!(JaroWinkler.distance("foo", "foo  "), 0.09);
         //        assert_eq!(JaroWinkler.distance("foo", " foo "), 0.13);
