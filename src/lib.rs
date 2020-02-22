@@ -22,13 +22,59 @@ pub mod ratcliff;
 pub mod token;
 mod utils;
 
+/// Evaluates the distance between two strings based on the provided
+/// [`crate::DistanceMetric`].
+///
+/// # Examples
+///
+/// ```
+/// # use str_distance::{Levenshtein, strdistance, SorensenDice, TokenSet, RatcliffObershelp, DistanceValue};
+/// assert_eq!(strdistance("kitten", "sitting", Levenshtein::default()), DistanceValue::Exact(3));
+/// assert_eq!(strdistance("kitten", "sitting", Levenshtein::with_max_distance(1)), DistanceValue::Exceeded(1));
+/// assert_eq!(strdistance("nacht", "night", SorensenDice::default()), 0.75);
+/// assert_eq!(strdistance("Real Madrid vs FC Barcelona", "Barcelona vs Real Madrid",
+/// TokenSet::new(RatcliffObershelp)), 0.0);
+/// ```
 pub fn strdistance<S, T, D>(a: S, b: T, dist: D) -> <D as DistanceMetric>::Dist
 where
     S: AsRef<str>,
     T: AsRef<str>,
     D: DistanceMetric,
 {
-    unimplemented!()
+    dist.distance(a, b)
+}
+
+/// Evaluates the normalized distance between two strings based on the provided
+/// [`crate::DistanceMetric`], so that it returns always a f64 between 0 and 1.
+/// A value of '0.0' corresponds to the "zero distance", both strings are
+/// considered equal by means of the metric, whereas a value of '1.0'
+/// corresponds to the maximum distance that can exist between the strings.
+///
+/// # Remark
+///
+/// The distance between two empty strings (a: "", b: "") is determined as 0.0,
+/// `(a == b)`
+///
+/// # Examples
+///
+/// /// ```
+/// # use str_distance::{Levenshtein, SorensenDice, TokenSet, RatcliffObershelp,
+/// DistanceValue, strdistance_normalized}; assert_eq!(strdistance_normalized(""
+/// , "", Levenshtein::default()), 0.0); assert_eq!(strdistance_normalized("
+/// nacht", "nacht", Levenshtein::default()), 0.0);
+/// assert_eq!(strdistance_normalized("abc", "def", Levenshtein::default()),
+/// 1.0); ```
+pub fn strdistance_normalized<S, T, D>(a: S, b: T, dist: D) -> f64
+where
+    S: AsRef<str>,
+    T: AsRef<str>,
+    D: DistanceMetric,
+{
+    dist.normalized(a, b)
+}
+
+fn x() {
+    let x = strdistance("", "", Levenshtein::default());
 }
 
 pub trait DistanceMetric {
