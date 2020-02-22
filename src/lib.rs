@@ -1,12 +1,19 @@
 //! Compute distances between strings
 
+// TODO add some remarks about coefficient vs distance (= 1 - coefficient):
+// in contrast to the coefficient/index of a metric, distance is a measure of dissimilarity
+// see for example: https://en.wikipedia.org/wiki/Jaccard_index
+
 #![forbid(unsafe_code)]
 #![allow(unused)]
 
 use std::ops::Deref;
 
+pub use jaro::{Jaro, JaroWinkler};
 pub use levenshtein::{DamerauLevenshtein, Levenshtein};
+pub use qgram::{Cosine, Jaccard, Overlap, QGram, SorensenDice};
 pub use ratcliff::RatcliffObershelp;
+pub use token::TokenSet;
 
 pub mod jaro;
 pub mod levenshtein;
@@ -32,9 +39,17 @@ pub trait DistanceMetric {
     where
         S: AsRef<str>,
         T: AsRef<str>;
+
+    fn normalized<S, T>(&self, a: S, b: T) -> f64
+    where
+        S: AsRef<str>,
+        T: AsRef<str>,
+    {
+        unimplemented!()
+    }
 }
 
-/// Convenience
+/// Convenience trait to use a distance on a type directly.
 pub trait DistanceElement {
     fn distance<S, D>(&self, other: S, dist: &D) -> <D as DistanceMetric>::Dist
     where

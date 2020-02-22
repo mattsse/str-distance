@@ -7,10 +7,10 @@ use crate::DistanceMetric;
 ///
 /// The distance corresponds to
 ///
-///  ```text
+/// ```text
 ///     ||v(s1, q) - v(s2, q)||
 /// ```
-/// 
+///
 /// where `v(s, q)` denotes the vec on the space of q-grams of length q,
 /// that contains the number of times a q-gram fragment appears for the str s
 #[derive(Debug, Clone)]
@@ -50,12 +50,10 @@ impl DistanceMetric for QGram {
             .map(|(n1, n2)| if n1 > n2 { n1 - n2 } else { n2 - n1 })
             .sum()
     }
-}
 
-impl QGram {
     /// Normalize the metric, so that it returns always a f64 between 0 and 1.
     /// If a str length < q, returns a == b
-    pub fn normalized<S, T>(&self, a: S, b: T) -> f64
+    fn normalized<S, T>(&self, a: S, b: T) -> f64
     where
         S: AsRef<str>,
         T: AsRef<str>,
@@ -132,12 +130,10 @@ impl DistanceMetric for Cosine {
         );
         1.0 - norm_prod as f64 / ((norm_a as f64).sqrt() * (norm_b as f64).sqrt())
     }
-}
 
-impl Cosine {
     /// Normalize the metric, so that it returns always a f64 between 0 and 1.
     /// If a str length < q, returns a == b
-    pub fn normalized<S, T>(&self, a: S, b: T) -> f64
+    fn normalized<S, T>(&self, a: S, b: T) -> f64
     where
         S: AsRef<str>,
         T: AsRef<str>,
@@ -199,12 +195,10 @@ impl DistanceMetric for Jaccard {
 
         1.0 - num_intersect as f64 / ((num_dist_a + num_dist_b) as f64 - num_intersect as f64)
     }
-}
 
-impl Jaccard {
     /// Normalize the metric, so that it returns always a f64 between 0 and 1.
     /// If a str length < q, returns a == b
-    pub fn normalized<S, T>(&self, a: S, b: T) -> f64
+    fn normalized<S, T>(&self, a: S, b: T) -> f64
     where
         S: AsRef<str>,
         T: AsRef<str>,
@@ -245,6 +239,13 @@ impl SorensenDice {
     }
 }
 
+impl Default for SorensenDice {
+    /// Use a bigram as default fragment length.
+    fn default() -> Self {
+        SorensenDice::new(2)
+    }
+}
+
 impl DistanceMetric for SorensenDice {
     type Dist = f64;
     fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
@@ -266,12 +267,10 @@ impl DistanceMetric for SorensenDice {
         let (num_dist_a, num_dist_b, num_intersect) = count_distinct_intersect(iter_a, iter_b);
         1.0 - 2.0 * num_intersect as f64 / (num_dist_a + num_dist_b) as f64
     }
-}
 
-impl SorensenDice {
     /// Normalize the metric, so that it returns always a f64 between 0 and 1.
     /// If a str length < q, returns a == b
-    pub fn normalized<S, T>(&self, a: S, b: T) -> f64
+    fn normalized<S, T>(&self, a: S, b: T) -> f64
     where
         S: AsRef<str>,
         T: AsRef<str>,
@@ -312,6 +311,13 @@ impl Overlap {
     }
 }
 
+impl Default for Overlap {
+    /// Use a monogram as default overlap fragment length.
+    fn default() -> Self {
+        Overlap::new(1)
+    }
+}
+
 impl DistanceMetric for Overlap {
     type Dist = f64;
     fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
@@ -333,12 +339,10 @@ impl DistanceMetric for Overlap {
         let (num_dist_a, num_dist_b, num_intersect) = count_distinct_intersect(iter_a, iter_b);
         1.0 - num_intersect as f64 / num_dist_a.min(num_dist_b) as f64
     }
-}
 
-impl Overlap {
     /// Normalize the metric, so that it returns always a f64 between 0 and 1.
     /// If a str length < q, returns a == b
-    pub fn normalized<S, T>(&self, a: S, b: T) -> f64
+    fn normalized<S, T>(&self, a: S, b: T) -> f64
     where
         S: AsRef<str>,
         T: AsRef<str>,
@@ -511,6 +515,10 @@ mod tests {
         assert_eq!(SorensenDice::new(3).distance("abc", "xxx"), 1.);
         assert_eq!(SorensenDice::new(2).distance("monday", "montag"), 0.6);
         assert_eq!(SorensenDice::new(2).distance("nacht", "night"), 0.75);
+
+        // 1-
+        // assert_eq!(SorensenDice::new(2).distance("nacht", "night"),
+        // strsim::sorensen_dice("nacht", "night"))
     }
 
     #[test]

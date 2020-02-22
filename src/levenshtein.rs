@@ -72,29 +72,13 @@ impl DistanceMetric for Levenshtein {
 
         DistanceValue::Exact(result)
     }
-}
 
-impl Levenshtein {
-    /// Normalize the metric, so that it returns always a f64 between 0 and 1
-    pub fn normalized<S, T>(&self, a: S, b: T) -> f64
+    fn normalized<S, T>(&self, a: S, b: T) -> f64
     where
         S: AsRef<str>,
         T: AsRef<str>,
     {
-        let a = a.as_ref();
-        let b = b.as_ref();
-
-        if let DistanceValue::Exact(val) = self.distance(a, b) {
-            let len_a = a.chars().count();
-            let len_b = b.chars().count();
-            if len_a + len_b == 0 {
-                0.
-            } else {
-                (val as f64) / len_a.max(len_b) as f64
-            }
-        } else {
-            1.
-        }
+        normalized_levenshtein(self, a, b)
     }
 }
 
@@ -241,28 +225,35 @@ impl DistanceMetric for DamerauLevenshtein {
             DistanceValue::Exceeded(max_dist)
         }
     }
-}
 
-impl DamerauLevenshtein {
-    pub fn normalized<S, T>(&self, a: S, b: T) -> f64
+    fn normalized<S, T>(&self, a: S, b: T) -> f64
     where
         S: AsRef<str>,
         T: AsRef<str>,
     {
-        let a = a.as_ref();
-        let b = b.as_ref();
+        normalized_levenshtein(self, a, b)
+    }
+}
 
-        if let DistanceValue::Exact(val) = self.distance(a, b) {
-            let len_a = a.chars().count();
-            let len_b = b.chars().count();
-            if len_a + len_b == 0 {
-                0.
-            } else {
-                (val as f64) / len_a.max(len_b) as f64
-            }
+fn normalized_levenshtein<D, S, T>(dist: &D, a: S, b: T) -> f64
+where
+    D: DistanceMetric<Dist = DistanceValue>,
+    S: AsRef<str>,
+    T: AsRef<str>,
+{
+    let a = a.as_ref();
+    let b = b.as_ref();
+
+    if let DistanceValue::Exact(val) = dist.distance(a, b) {
+        let len_a = a.chars().count();
+        let len_b = b.chars().count();
+        if len_a + len_b == 0 {
+            0.
         } else {
-            1.
+            (val as f64) / len_a.max(len_b) as f64
         }
+    } else {
+        1.
     }
 }
 
