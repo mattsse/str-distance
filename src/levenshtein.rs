@@ -55,7 +55,7 @@ impl DistanceMetric for Levenshtein {
         for (c1_idx, c1) in delim.distinct_s1.enumerate() {
             result = c1_idx + 1;
             let mut dist_c2 = c1_idx;
-            let mut min_dist = c1_idx;
+            let mut min_dist = if c1_idx == 0 { 0 } else { c1_idx - 1 };
 
             for (c2_idx, c2) in delim.distinct_s2.clone().enumerate() {
                 let cost = if c1 == c2 { 0usize } else { 1usize };
