@@ -35,6 +35,16 @@ impl DistanceMetric for RatcliffObershelp {
             1.0 - 2. * matched as f64 / (len_a + len_b) as f64
         }
     }
+    fn normalized<S, T>(&self, a: S, b: T) -> f64
+    where
+        S: IntoIterator,
+        T: IntoIterator,
+        <S as IntoIterator>::IntoIter: Clone,
+        <T as IntoIterator>::IntoIter: Clone,
+        <S as IntoIterator>::Item: PartialEq<<T as IntoIterator>::Item>,
+    {
+        self.distance(a, b)
+    }
 }
 
 struct SequenceMatcher<S, T>
@@ -75,6 +85,7 @@ where
 
     /// Finds the longest substr of both iters the recursively find the
     /// longest substr of both tails.
+    // TODO provide HashSet::<(usize, usize, usize) to track positions?
     fn match_sequences(self) -> usize {
         let subseq = longest_common_subsequence(
             self.s1.clone().skip(self.start1).take(self.len1),
