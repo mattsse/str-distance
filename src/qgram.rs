@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use crate::utils::order_by_len_asc;
 use crate::DistanceMetric;
+use std::hash::Hash;
 
 /// Represents a QGram metric where `q` is the length of a q-gram fragment.
 ///
@@ -351,7 +352,13 @@ impl DistanceMetric for Overlap {
     }
 }
 
-fn eq_map<'a>(mut a: QGramIter<'a>, mut b: QGramIter<'a>) -> HashMap<&'a [char], (usize, usize)> {
+fn eq_map<'a, T>(
+    mut a: QGramIter<'a, T>,
+    mut b: QGramIter<'a, T>,
+) -> HashMap<&'a [T], (usize, usize)>
+where
+    T: Hash + Eq,
+{
     let mut set = HashMap::new();
 
     for qa in a {
@@ -368,13 +375,13 @@ fn eq_map<'a>(mut a: QGramIter<'a>, mut b: QGramIter<'a>) -> HashMap<&'a [char],
 
 /// A Iterator that behaves similar to [`std::slice::Chunks`], but increases the
 /// start index into the slice only by one each iteration.
-pub(crate) struct QGramIter<'a> {
-    items: &'a [char],
+pub(crate) struct QGramIter<'a, T> {
+    items: &'a [T],
     index: usize,
     chunk_size: usize,
 }
 
-impl<'a> QGramIter<'a> {
+impl<'a, T> QGramIter<'a, T> {
     /// Constructs the iterator that yields all possible q-grams of the
     /// underlying slice.
     ///
@@ -384,7 +391,7 @@ impl<'a> QGramIter<'a> {
     /// # Panics
     ///
     /// Panics if `q` is 0.
-    pub fn new(items: &'a [char], chunk_size: usize) -> Self {
+    pub fn new(items: &'a [T], chunk_size: usize) -> Self {
         assert_ne!(chunk_size, 0);
         Self {
             items,
@@ -394,8 +401,8 @@ impl<'a> QGramIter<'a> {
     }
 }
 
-impl<'a> Iterator for QGramIter<'a> {
-    type Item = &'a [char];
+impl<'a, T> Iterator for QGramIter<'a, T> {
+    type Item = &'a [T];
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.items.is_empty()
@@ -447,7 +454,10 @@ where
     }
 }
 
-fn count_distinct_intersect(a: QGramIter, b: QGramIter) -> (usize, usize, usize) {
+fn count_distinct_intersect<T>(a: QGramIter<T>, b: QGramIter<T>) -> (usize, usize, usize)
+where
+    T: Hash + Eq,
+{
     eq_map(a, b).values().cloned().fold(
         (0, 0, 0),
         |(num_dist_a, num_dist_b, num_intersect), (n1, n2)| {
@@ -528,7 +538,10 @@ mod tests {
         assert_eq!(SorensenDice::new(3).str_distance("abc", "abc"), 0.);
         assert_eq!(SorensenDice::new(3).str_distance("abc", "xxx"), 1.);
         assert_eq!(
-            format!("{:.6}", SorensenDice::new(1).str_distance("monday", "montag")),
+            format!(
+                "{:.6}",
+                SorensenDice::new(1).str_distance("monday", "montag")
+            ),
             "0.333333"
         );
         assert_eq!(SorensenDice::new(1).str_distance("nacht", "night"), 0.4);
