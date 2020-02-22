@@ -3,15 +3,19 @@ name = "str-distance"
 version = "0.1.0"
 authors = ["mattsse <matthias.seitz@tum.de>"]
 edition = "2018"
+license = "MIT or Apache 2.0"
+categories = ["Text processing", "nlp"]
+keywords = ["string", "distance", "similarity", "Levenshtein", "Jaro", "Qgram"]
+description = "Distance metrics to evaluate distances between strings."
+documentation = "https://docs.rs/str-distance/"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+repository = "https://github.com/mattsse/str-distance"
+
+[badges]
+travis-ci = { repository = "https://github.com/mattsse/str-distance" }
 
 [dependencies]
 
 
 [dev-dependencies]
 strsim = "0.10.0"
-
-
-[profile.bench]
-opt-level = 3
