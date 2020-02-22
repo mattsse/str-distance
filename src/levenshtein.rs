@@ -3,10 +3,25 @@ use std::cmp::min;
 use crate::utils::{delim_distinct, order_by_len_asc, DelimDistinct};
 use crate::{DistanceMetric, DistanceValue};
 
-pub struct Levenshtein;
+#[derive(Debug, Clone, Default)]
+pub struct Levenshtein {
+    /// The maximum edit distance of interest.
+    ///
+    /// Used to short circuit the exact evaluation of the distance, if the exact
+    /// value is guaranteed to exceed the configured maximum.
+    max_distance: Option<usize>,
+}
+
+impl Levenshtein {
+    pub fn with_max_distance(max_distance: usize) -> Self {
+        Self {
+            max_distance: Some(max_distance),
+        }
+    }
+}
 
 impl DistanceMetric for Levenshtein {
-    type Dist = usize;
+    type Dist = DistanceValue;
 
     #[inline]
     fn distance<S, T>(&self, s1: S, s2: T) -> Self::Dist
@@ -22,8 +37,16 @@ impl DistanceMetric for Levenshtein {
 
         if delim.remaining_s1() == 0 {
             // the longer str starts or ends completely with the shorter str
-            return delim.remaining_s2();
+            return DistanceValue::Exact(delim.remaining_s2());
         }
+
+        if let Some(max_dist) = self.max_distance {
+            if delim.remaining_s2() - delim.remaining_s1() > max_dist {
+                return DistanceValue::Exceeded(max_dist);
+            }
+        }
+
+        let max_dist = self.max_distance.unwrap_or_else(|| delim.remaining_s2());
 
         let mut cache: Vec<usize> = (1..=delim.remaining_s2()).collect();
 
@@ -32,35 +55,46 @@ impl DistanceMetric for Levenshtein {
         for (c1_idx, c1) in delim.distinct_s1.enumerate() {
             result = c1_idx + 1;
             let mut dist_c2 = c1_idx;
+            let mut min_dist = c1_idx;
 
             for (c2_idx, c2) in delim.distinct_s2.clone().enumerate() {
                 let cost = if c1 == c2 { 0usize } else { 1usize };
                 let dist_c1 = dist_c2 + cost;
                 dist_c2 = cache[c2_idx];
                 result = min(result + 1, min(dist_c1, dist_c2 + 1));
+                min_dist = min(min_dist, dist_c2);
                 cache[c2_idx] = result;
+            }
+            if min_dist > max_dist {
+                return DistanceValue::Exceeded(max_dist);
             }
         }
 
-        result
+        DistanceValue::Exact(result)
     }
 }
 
 impl Levenshtein {
     /// Normalize the metric, so that it returns always a f64 between 0 and 1
-    pub fn normalized<S, T>(&self, s1: S, s2: T) -> f64
+    pub fn normalized<S, T>(&self, a: S, b: T) -> f64
     where
         S: AsRef<str>,
         T: AsRef<str>,
     {
-        let s1 = s1.as_ref();
-        let s2 = s2.as_ref();
+        let a = a.as_ref();
+        let b = b.as_ref();
 
-        if s2.is_empty() && s1.is_empty() {
-            return 1.0;
+        if let DistanceValue::Exact(val) = self.distance(a, b) {
+            let len_a = a.chars().count();
+            let len_b = b.chars().count();
+            if len_a + len_b == 0 {
+                0.
+            } else {
+                (val as f64) / len_a.max(len_b) as f64
+            }
+        } else {
+            1.
         }
-
-        1.0 - (self.distance(s1, s2) as f64) / (s1.chars().count().max(s2.chars().count()) as f64)
     }
 }
 
@@ -81,9 +115,12 @@ impl Levenshtein {
 /// of 2 by a complete application of Damerau-Levenshtein, but a distance of 3
 /// by this method that uses the optimal string alignment algorithm. See
 /// wikipedia article for more detail on this distinction.
-#[derive(Clone, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct DamerauLevenshtein {
     /// The maximum edit distance of interest.
+    ///
+    /// Used to short circuit the exact evaluation of the distance, if the exact
+    /// value is guaranteed to exceed the configured maximum.
     max_distance: Option<usize>,
 }
 
@@ -207,22 +244,24 @@ impl DistanceMetric for DamerauLevenshtein {
 }
 
 impl DamerauLevenshtein {
-    pub fn normalized<S, T>(&self, s1: S, s2: T) -> f64
+    pub fn normalized<S, T>(&self, a: S, b: T) -> f64
     where
         S: AsRef<str>,
         T: AsRef<str>,
     {
-        let s1 = s1.as_ref();
-        let s2 = s2.as_ref();
+        let a = a.as_ref();
+        let b = b.as_ref();
 
-        if s2.is_empty() && s1.is_empty() {
-            return 1.0;
-        }
-
-        if let DistanceValue::Exact(val) = self.distance(s1, s2) {
-            1.0 - (val as f64) / (s1.chars().count().max(s2.chars().count()) as f64)
+        if let DistanceValue::Exact(val) = self.distance(a, b) {
+            let len_a = a.chars().count();
+            let len_b = b.chars().count();
+            if len_a + len_b == 0 {
+                0.
+            } else {
+                (val as f64) / len_a.max(len_b) as f64
+            }
         } else {
-            1.0
+            1.
         }
     }
 }
@@ -233,22 +272,29 @@ mod tests {
 
     #[test]
     fn levenshtein_dist() {
-        assert_eq!(Levenshtein.distance("kitten", "sitting"), 3);
-        assert_eq!(Levenshtein.distance("", ""), 0);
-        assert_eq!(Levenshtein.distance("sunday", "saturday"), 3);
-        assert_eq!(Levenshtein.distance("abc", ""), 3);
+        assert_eq!(*Levenshtein::default().distance("kitten", "sitting"), 3);
+        assert_eq!(*Levenshtein::default().distance("", ""), 0);
+        assert_eq!(*Levenshtein::default().distance("sunday", "saturday"), 3);
+        assert_eq!(*Levenshtein::default().distance("abc", ""), 3);
         let s1 = "The quick brown fox jumped over the angry dog.";
         let s2 = "Lorem ipsum dolor sit amet, dicta latine an eam.";
-        assert_eq!(Levenshtein.distance(s1, s2), 37);
+        assert_eq!(*Levenshtein::default().distance(s1, s2), 37);
+        assert_eq!(*Levenshtein::with_max_distance(10).distance(s1, s2), 10);
     }
 
     #[test]
     fn levenshtein_normalized() {
-        assert!((Levenshtein.normalized("kitten", "sitting") - 0.57142).abs() < 0.00001);
-        assert!((Levenshtein.normalized("", "") - 1.0).abs() < 0.00001);
-        assert!(Levenshtein.normalized("", "second").abs() < 0.00001);
-        assert!(Levenshtein.normalized("first", "").abs() < 0.00001);
-        assert!((Levenshtein.normalized("string", "string") - 1.0).abs() < 0.00001);
+        assert_eq!(
+            format!(
+                "{:.6}",
+                Levenshtein::default().normalized("kitten", "sitting")
+            ),
+            "0.428571"
+        );
+        assert_eq!(Levenshtein::default().normalized("", ""), 0.);
+        assert_eq!(Levenshtein::default().normalized("", "second"), 1.);
+        assert_eq!(Levenshtein::default().normalized("first", ""), 1.);
+        assert_eq!(Levenshtein::default().normalized("string", "string"), 0.);
     }
 
     #[test]
@@ -274,6 +320,19 @@ mod tests {
         assert_eq!(
             DamerauLevenshtein::with_max_distance(10).distance(s1, s2),
             DistanceValue::Exceeded(10)
+        );
+    }
+
+    #[test]
+    fn damerau_levenshtein_normalized() {
+        assert_eq!(DamerauLevenshtein::default().normalized("", ""), 0.);
+        assert_eq!(DamerauLevenshtein::default().normalized("", "second"), 1.);
+        assert_eq!(
+            format!(
+                "{:.6}",
+                DamerauLevenshtein::default().normalized("kitten", "sitting")
+            ),
+            "0.428571"
         );
     }
 
