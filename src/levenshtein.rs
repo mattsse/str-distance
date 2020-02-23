@@ -83,7 +83,7 @@ impl DistanceMetric for Levenshtein {
         let (a, b) = order_by_len_asc(a.as_ref(), b.as_ref());
 
         // exclude matching prefix and suffix
-        let mut delim = delim_distinct(a.chars(), b.chars());
+        let mut delim = DelimDistinct::delim_distinct(a.chars(), b.chars());
 
         if delim.remaining_s1() == 0 {
             // the longer str starts or ends completely with the shorter str
@@ -187,7 +187,7 @@ impl DistanceMetric for DamerauLevenshtein {
         let (s1, s2) = order_by_len_asc(s1.as_ref(), s2.as_ref());
 
         // exclude matching prefix prefix and suffix
-        let mut delim = delim_distinct(s1.chars(), s2.chars());
+        let mut delim = DelimDistinct::delim_distinct(s1.chars(), s2.chars());
 
         if delim.remaining_s1() == 0 {
             // the longer str starts or ends completely with the shorter str
