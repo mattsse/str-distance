@@ -96,10 +96,10 @@ where
         self.s1_len
     }
 
-    /// Return the len of common prefix and suffix chars, and the distinct left
+    /// Return the len of common prefix and suffix items, and the distinct left
     /// elements in between.
     #[inline]
-    pub(crate) fn delim_distinct(
+    pub(crate) fn new(
         a: S,
         b: T,
     ) -> DelimDistinct<std::iter::Skip<std::iter::Take<S>>, std::iter::Skip<std::iter::Take<T>>>
@@ -140,7 +140,7 @@ mod tests {
         let s1 = "kitten";
         let s2 = "sitting";
 
-        let delim = DelimDistinct::delim_distinct(s1.chars(), s2.chars());
+        let delim = DelimDistinct::new(s1.chars(), s2.chars());
         assert_eq!(delim.prefix_len, 0);
         assert_eq!(delim.suffix_len, 0);
         assert_eq!(delim.s1_len, 6);
@@ -152,7 +152,7 @@ mod tests {
         let s1 = "kitten";
         let s2 = "kitten";
 
-        let delim = DelimDistinct::delim_distinct(s1.chars(), s2.chars());
+        let delim = DelimDistinct::new(s1.chars(), s2.chars());
         assert_eq!(delim.common(), 6);
         assert_eq!(delim.remaining(), (0, 0));
         assert!(delim.is_eq());
@@ -163,14 +163,14 @@ mod tests {
         let s1 = "cute kitten";
         let s2 = "kitten";
 
-        let delim = DelimDistinct::delim_distinct(s1.chars(), s2.chars());
+        let delim = DelimDistinct::new(s1.chars(), s2.chars());
         assert_eq!(delim.common(), 6);
         assert_eq!(delim.remaining(), (5, 0));
         assert_eq!(delim.distinct_s1.collect::<String>(), String::from("cute "));
 
         let s1 = "k cute kitten";
         let s2 = "kitten";
-        let delim = DelimDistinct::delim_distinct(s1.chars(), s2.chars());
+        let delim = DelimDistinct::new(s1.chars(), s2.chars());
         assert_eq!(delim.common(), 6);
         assert_eq!(delim.remaining(), (7, 0));
         assert_eq!(
@@ -184,7 +184,7 @@ mod tests {
         let s1 = "hungry kitten";
         let s2 = "hungry hippo";
 
-        let delim = DelimDistinct::delim_distinct(s1.chars(), s2.chars());
+        let delim = DelimDistinct::new(s1.chars(), s2.chars());
         assert_eq!(delim.common(), 7);
         assert_eq!(delim.remaining(), (6, 5));
         assert_eq!(
@@ -199,7 +199,7 @@ mod tests {
         let s1 = "hungry kitten is hungry";
         let s2 = "hungry hippo is hungry";
 
-        let delim = DelimDistinct::delim_distinct(s1.chars(), s2.chars());
+        let delim = DelimDistinct::new(s1.chars(), s2.chars());
         assert_eq!(delim.common(), 17);
         assert_eq!(delim.remaining(), (6, 5));
         assert_eq!(

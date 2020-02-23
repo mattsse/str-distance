@@ -33,7 +33,7 @@ impl DistanceMetric for Levenshtein {
         <T as IntoIterator>::Item: PartialEq,
     {
         // exclude matching prefix and suffix
-        let delim = DelimDistinct::delim_distinct(a.into_iter(), b.into_iter());
+        let delim = DelimDistinct::new(a.into_iter(), b.into_iter());
 
         if delim.remaining_s1() == 0 {
             // the longer str starts or ends completely with the shorter str
@@ -152,7 +152,7 @@ impl DistanceMetric for DamerauLevenshtein {
         <T as IntoIterator>::Item: PartialEq,
     {
         // exclude matching prefix prefix and suffix
-        let delim = DelimDistinct::delim_distinct(a.into_iter(), b.into_iter());
+        let delim = DelimDistinct::new(a.into_iter(), b.into_iter());
 
         if delim.remaining_s1() == 0 {
             // the longer str starts or ends completely with the shorter str
