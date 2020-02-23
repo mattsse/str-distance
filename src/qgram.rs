@@ -523,13 +523,13 @@ where
             v.push((qgram, num));
         }
     }
-    let mut distinct_a: Vec<_> = a.map(|s| (s, 1usize)).collect();
-    let mut distinct_b: Vec<_> = b.map(|s| (s, 1usize)).collect();
+    let mut distinct_a: Vec<_> = a.map(|s| (s, 1)).collect();
+    let mut distinct_b: Vec<_> = b.map(|s| (s, 1)).collect();
 
     count_distinct(&mut distinct_a);
     count_distinct(&mut distinct_b);
 
-    let mut nums: Vec<_> = distinct_a.iter().map(|(_, n)| (*n, 0usize)).collect();
+    let mut nums: Vec<_> = distinct_a.iter().map(|(_, n)| (*n, 0)).collect();
 
     'outer: for (qgram_b, num_b) in distinct_b {
         for (idx, (qgram_a, num_a)) in distinct_a.iter().enumerate() {

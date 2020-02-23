@@ -15,7 +15,7 @@ where
     T: Iterator,
     <S as Iterator>::Item: PartialEq<<T as Iterator>::Item>,
 {
-    let mut match_ctn = 0usize;
+    let mut match_ctn = 0;
     loop {
         let c1 = match s1_iter.next() {
             None => {
@@ -47,17 +47,17 @@ where
     T: Iterator + Clone,
     <S as Iterator>::Item: PartialEq<<T as Iterator>::Item>,
 {
-    /// The amount of chars both str share at their beginning.
+    /// The amount of items both iter share at their beginning.
     pub prefix_len: usize,
     /// Iterator over the distinct items of s1
     pub distinct_s1: S,
-    /// The amount of distinct chars left in str 1
+    /// The amount of distinct items left in iter 1
     pub s1_len: usize,
     /// Iterator over the distinct items of s2
     pub distinct_s2: T,
     /// The amount of distinct items left in iter 2
     pub s2_len: usize,
-    /// The amount of items both str share at their end.
+    /// The amount of items both iters share at their end.
     pub suffix_len: usize,
 }
 
