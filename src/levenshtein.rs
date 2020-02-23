@@ -146,22 +146,13 @@ impl DistanceMetric for DamerauLevenshtein {
     where
         S: IntoIterator,
         T: IntoIterator,
+        <S as IntoIterator>::IntoIter: Clone,
+        <T as IntoIterator>::IntoIter: Clone,
         <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
         <T as IntoIterator>::Item: PartialEq,
     {
-        unimplemented!()
-    }
-
-    fn str_distance<S, T>(&self, s1: S, s2: T) -> Self::Dist
-    where
-        S: AsRef<str>,
-        T: AsRef<str>,
-    {
-        // make sure we use the shortest str for the outer loop
-        let (s1, s2) = order_by_len_asc(s1.as_ref(), s2.as_ref());
-
         // exclude matching prefix prefix and suffix
-        let mut delim = DelimDistinct::delim_distinct(s1.chars(), s2.chars());
+        let mut delim = DelimDistinct::delim_distinct(a.into_iter(), b.into_iter());
 
         if delim.remaining_s1() == 0 {
             // the longer str starts or ends completely with the shorter str
@@ -257,6 +248,16 @@ impl DistanceMetric for DamerauLevenshtein {
         } else {
             DistanceValue::Exceeded(max_dist)
         }
+    }
+
+    fn str_distance<S, T>(&self, s1: S, s2: T) -> Self::Dist
+    where
+        S: AsRef<str>,
+        T: AsRef<str>,
+    {
+        // make sure we use the shortest str for the outer loop
+        let (s1, s2) = order_by_len_asc(s1.as_ref(), s2.as_ref());
+        self.distance(s1.chars(), s2.chars())
     }
 
     fn normalized<S, T>(&self, a: S, b: T) -> f64
