@@ -21,6 +21,43 @@ impl<D: DistanceMetric> TokenSet<D> {
 impl<D: DistanceMetric> DistanceMetric for TokenSet<D> {
     type Dist = <D as DistanceMetric>::Dist;
 
+    fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
+    where
+        S: IntoIterator,
+        T: IntoIterator,
+        <S as IntoIterator>::IntoIter: Clone,
+        <T as IntoIterator>::IntoIter: Clone,
+        <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
+        <T as IntoIterator>::Item: PartialEq,
+    {
+        let a = a.into_iter();
+        let b = b.into_iter();
+
+        let intersect = b.clone().filter(|x| a.clone().any(|y| y == *x));
+
+        if intersect.clone().count() == 0 {
+            return self.inner.distance(a, b);
+        }
+
+        let dist_inter_a = self.inner.distance(a.clone(), intersect.clone());
+        let dist_inter_b = self.inner.distance(intersect, b.clone());
+        let dist_a_b = self.inner.distance(a, b);
+
+        if dist_inter_a < dist_inter_b {
+            if dist_inter_a < dist_a_b {
+                dist_inter_a
+            } else {
+                dist_a_b
+            }
+        } else {
+            if dist_inter_b < dist_a_b {
+                dist_inter_b
+            } else {
+                dist_a_b
+            }
+        }
+    }
+
     fn str_distance<S, T>(&self, a: S, b: T) -> Self::Dist
     where
         S: AsRef<str>,
