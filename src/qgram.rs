@@ -1,8 +1,4 @@
-use std::collections::HashMap;
-
-use crate::utils::order_by_len_asc;
 use crate::DistanceMetric;
-use std::hash::Hash;
 
 /// Represents a QGram metric where `q` is the length of a q-gram fragment.
 ///
@@ -391,7 +387,7 @@ impl DistanceMetric for Overlap {
 /// A Iterator that behaves similar to [`std::slice::Chunks`], but increases the
 /// start index into the slice only by one each iteration.
 #[derive(Debug, Clone)]
-pub(crate) struct QGramIter<'a, T> {
+pub struct QGramIter<'a, T> {
     items: &'a [T],
     index: usize,
     chunk_size: usize,
@@ -417,7 +413,7 @@ impl<'a, T> QGramIter<'a, T> {
     }
 
     /// Resets the index back the beginning.
-    fn reset(&mut self) {
+    pub fn reset(&mut self) {
         self.index = 0;
     }
 }
@@ -509,7 +505,7 @@ where
 /// b
 ///
 /// This exists only to remove the necessity for `S: Hash + Eq, T:Hash + Eq`.
-fn eq_map<'a, S, T>(mut a: QGramIter<'a, S>, mut b: QGramIter<'a, T>) -> Vec<(usize, usize)>
+fn eq_map<'a, S, T>(a: QGramIter<'a, S>, b: QGramIter<'a, T>) -> Vec<(usize, usize)>
 where
     S: PartialEq + PartialEq<T>,
     T: PartialEq,
@@ -663,12 +659,12 @@ mod tests {
         assert_eq!(iter.size_hint(), (0, Some(0)));
 
         let s: Vec<_> = "hello".chars().collect();
-        let mut iter = QGramIter::new(&s, 2);
+        let iter = QGramIter::new(&s, 2);
         assert_eq!(iter.size_hint(), (4, Some(4)));
         assert_eq!(iter.count(), 4);
 
         let s: Vec<_> = "hello".chars().collect();
-        let mut iter = QGramIter::new(&s, 3);
+        let iter = QGramIter::new(&s, 3);
         assert_eq!(iter.size_hint(), (3, Some(3)));
         assert_eq!(iter.count(), 3);
 

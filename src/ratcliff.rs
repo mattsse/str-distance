@@ -1,7 +1,3 @@
-use std::collections::HashSet;
-use std::iter::{Skip, Take};
-use std::str::Chars;
-
 use crate::DistanceMetric;
 
 /// The distance between two strings is defined as one minus  the number of
@@ -144,7 +140,7 @@ impl CommonSubseq {
 }
 
 /// Find the longest common substr of both iterators.
-fn longest_common_subsequence<S, T>(s1: S, s2: T, s1_len: usize, s2_len: usize) -> CommonSubseq
+fn longest_common_subsequence<S, T>(s1: S, s2: T, _s1_len: usize, s2_len: usize) -> CommonSubseq
 where
     S: Iterator + Clone,
     T: Iterator + Clone,

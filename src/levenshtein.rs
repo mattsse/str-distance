@@ -1,6 +1,6 @@
 use std::cmp::min;
 
-use crate::utils::{delim_distinct, order_by_len_asc, DelimDistinct};
+use crate::utils::{order_by_len_asc, DelimDistinct};
 use crate::{DistanceMetric, DistanceValue};
 
 #[derive(Debug, Clone, Default)]
@@ -33,7 +33,7 @@ impl DistanceMetric for Levenshtein {
         <T as IntoIterator>::Item: PartialEq,
     {
         // exclude matching prefix and suffix
-        let mut delim = DelimDistinct::delim_distinct(a.into_iter(), b.into_iter());
+        let delim = DelimDistinct::delim_distinct(a.into_iter(), b.into_iter());
 
         if delim.remaining_s1() == 0 {
             // the longer str starts or ends completely with the shorter str
@@ -152,7 +152,7 @@ impl DistanceMetric for DamerauLevenshtein {
         <T as IntoIterator>::Item: PartialEq,
     {
         // exclude matching prefix prefix and suffix
-        let mut delim = DelimDistinct::delim_distinct(a.into_iter(), b.into_iter());
+        let delim = DelimDistinct::delim_distinct(a.into_iter(), b.into_iter());
 
         if delim.remaining_s1() == 0 {
             // the longer str starts or ends completely with the shorter str
@@ -171,7 +171,7 @@ impl DistanceMetric for DamerauLevenshtein {
 
         let mut v0 = Vec::with_capacity(delim.remaining_s2());
         v0.extend(1..=max_dist);
-        for i in max_dist + 1..delim.remaining_s2() {
+        for _i in max_dist + 1..delim.remaining_s2() {
             v0.push(max_dist + 1);
         }
 

@@ -143,7 +143,7 @@ where
 
         let s2: Vec<_> = b.chars().collect();
 
-        for qgram in QGramIter::new(&s2, len_a) {
+        for _qgram in QGramIter::new(&s2, len_a) {
             // let current = self.inner.distance(a,
             // std::str::from_utf8_unchecked(qgram.));
         }
@@ -166,8 +166,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::RatcliffObershelp;
+
+    use super::*;
 
     #[test]
     fn token_set_ratcliff() {

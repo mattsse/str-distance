@@ -1,5 +1,5 @@
 use crate::utils::{count_eq, order_by_len_asc};
-use crate::{DistanceMetric, DistanceValue};
+use crate::DistanceMetric;
 
 pub struct Jaro;
 
@@ -97,7 +97,7 @@ impl DistanceMetric for JaroWinkler {
 
         let prefix_ctn = count_eq(s1.chars(), s2.chars());
 
-        dist += (0.1 * prefix_ctn as f64 * (1.0 - dist));
+        dist += 0.1 * prefix_ctn as f64 * (1.0 - dist);
 
         if dist <= 1.0 {
             0.0

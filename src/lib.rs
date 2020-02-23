@@ -5,7 +5,7 @@
 // see for example: https://en.wikipedia.org/wiki/Jaccard_index
 
 #![forbid(unsafe_code)]
-#![allow(unused)]
+// #![allow(unused)]
 
 use std::ops::Deref;
 
@@ -78,7 +78,7 @@ pub trait DistanceMetric {
     type Dist: PartialOrd;
 
     /// Generic implementation of the metric.
-    fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
+    fn distance<S, T>(&self, _a: S, _b: T) -> Self::Dist
     where
         S: IntoIterator,
         T: IntoIterator,
@@ -100,7 +100,7 @@ pub trait DistanceMetric {
     }
 
     /// Generic implementation of the normalized metric.
-    fn normalized<S, T>(&self, a: S, b: T) -> f64
+    fn normalized<S, T>(&self, _a: S, _b: T) -> f64
     where
         S: IntoIterator,
         T: IntoIterator,
