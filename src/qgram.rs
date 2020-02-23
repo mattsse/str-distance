@@ -191,13 +191,18 @@ impl Jaccard {
 
 impl DistanceMetric for Jaccard {
     type Dist = f64;
-    fn str_distance<S, T>(&self, a: S, b: T) -> Self::Dist
+
+    fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
     where
-        S: AsRef<str>,
-        T: AsRef<str>,
+        S: IntoIterator,
+        T: IntoIterator,
+        <S as IntoIterator>::IntoIter: Clone,
+        <T as IntoIterator>::IntoIter: Clone,
+        <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
+        <T as IntoIterator>::Item: PartialEq,
     {
-        let a: Vec<_> = a.as_ref().chars().collect();
-        let b: Vec<_> = b.as_ref().chars().collect();
+        let a: Vec<_> = a.into_iter().collect();
+        let b: Vec<_> = b.into_iter().collect();
 
         // edge case where an input is empty
         if a.is_empty() || b.is_empty() {
@@ -266,13 +271,18 @@ impl Default for SorensenDice {
 
 impl DistanceMetric for SorensenDice {
     type Dist = f64;
-    fn str_distance<S, T>(&self, a: S, b: T) -> Self::Dist
+
+    fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
     where
-        S: AsRef<str>,
-        T: AsRef<str>,
+        S: IntoIterator,
+        T: IntoIterator,
+        <S as IntoIterator>::IntoIter: Clone,
+        <T as IntoIterator>::IntoIter: Clone,
+        <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
+        <T as IntoIterator>::Item: PartialEq,
     {
-        let a: Vec<_> = a.as_ref().chars().collect();
-        let b: Vec<_> = b.as_ref().chars().collect();
+        let a: Vec<_> = a.into_iter().collect();
+        let b: Vec<_> = b.into_iter().collect();
 
         // edge case where an input is empty
         if a.is_empty() || b.is_empty() {
@@ -340,13 +350,18 @@ impl Default for Overlap {
 
 impl DistanceMetric for Overlap {
     type Dist = f64;
-    fn str_distance<S, T>(&self, a: S, b: T) -> Self::Dist
+
+    fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
     where
-        S: AsRef<str>,
-        T: AsRef<str>,
+        S: IntoIterator,
+        T: IntoIterator,
+        <S as IntoIterator>::IntoIter: Clone,
+        <T as IntoIterator>::IntoIter: Clone,
+        <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
+        <T as IntoIterator>::Item: PartialEq,
     {
-        let a: Vec<_> = a.as_ref().chars().collect();
-        let b: Vec<_> = b.as_ref().chars().collect();
+        let a: Vec<_> = a.into_iter().collect();
+        let b: Vec<_> = b.into_iter().collect();
 
         // edge case where an input is empty
         if a.is_empty() || b.is_empty() {
@@ -360,8 +375,6 @@ impl DistanceMetric for Overlap {
         1.0 - num_intersect as f64 / num_dist_a.min(num_dist_b) as f64
     }
 
-    /// Normalize the metric, so that it returns always a f64 between 0 and 1.
-    /// If a str length < q, returns a == b
     fn normalized<S, T>(&self, a: S, b: T) -> f64
     where
         S: IntoIterator,
@@ -469,9 +482,10 @@ where
     }
 }
 
-fn count_distinct_intersect<T>(a: QGramIter<T>, b: QGramIter<T>) -> (usize, usize, usize)
+fn count_distinct_intersect<S, T>(a: QGramIter<S>, b: QGramIter<T>) -> (usize, usize, usize)
 where
-    T: Hash + Eq,
+    S: PartialEq + PartialEq<T>,
+    T: PartialEq,
 {
     eq_map(a, b).into_iter().fold(
         (0, 0, 0),
