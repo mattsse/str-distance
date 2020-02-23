@@ -46,8 +46,7 @@ impl DistanceMetric for QGram {
         let iter_b = QGramIter::new(&b, self.q);
 
         eq_map(iter_a, iter_b)
-            .values()
-            .cloned()
+            .into_iter()
             .map(|(n1, n2)| if n1 > n2 { n1 - n2 } else { n2 - n1 })
             .sum()
     }
@@ -123,7 +122,7 @@ impl DistanceMetric for Cosine {
         let iter_a = QGramIter::new(&a, self.q);
         let iter_b = QGramIter::new(&b, self.q);
 
-        let (norm_a, norm_b, norm_prod) = eq_map(iter_a, iter_b).values().cloned().fold(
+        let (norm_a, norm_b, norm_prod) = eq_map(iter_a, iter_b).into_iter().fold(
             (0usize, 0usize, 0usize),
             |(norm_a, norm_b, norm_prod), (n1, n2)| {
                 (norm_a + n1 * n1, norm_b + n2 * n2, norm_prod + n1 * n2)
@@ -443,7 +442,7 @@ fn count_distinct_intersect<T>(a: QGramIter<T>, b: QGramIter<T>) -> (usize, usiz
 where
     T: Hash + Eq,
 {
-    eq_map(a, b).values().cloned().fold(
+    eq_map(a, b).into_iter().fold(
         (0, 0, 0),
         |(num_dist_a, num_dist_b, num_intersect), (n1, n2)| {
             if n1 > 0 {
@@ -463,57 +462,46 @@ where
     )
 }
 
-fn eq_map2<'a, S, T>(
-    mut a: QGramIter<'a, S>,
-    mut b: QGramIter<'a, T>,
-) -> HashMap<&'a [T], (usize, usize)>
+/// Returns a list of tuples with the numbers of times a qgram appears in a and
+/// b
+///
+/// This exists only to remove the necessity for `S: Hash + Eq, T:Hash + Eq`.
+fn eq_map<'a, S, T>(mut a: QGramIter<'a, S>, mut b: QGramIter<'a, T>) -> Vec<(usize, usize)>
 where
-    S: PartialEq<T>,
+    S: PartialEq + PartialEq<T>,
+    T: PartialEq,
 {
-    // TODO refactor so it doesn't require Hash
-
-    let mut cache_a: Vec<_> = a.map(|s| (s, 1usize, 0usize)).collect();
-
-    let cache_b: Vec<_> = b.map(|s| (s, 1usize, 0usize)).collect();
-
-    // make  a distinct, make b disntict
-
-    // let mut set = HashMap::new();
-    //
-    // set.insert(a.next().unwrap(), 1);
-    //
-    // for qa in a {
-    //     let (x, _) = set.entry(qa).or_insert((0, 0));
-    //     *x += 1;
-    // }
-    // for qb in b {
-    //     let (_, y) = set.entry(qb).or_insert((0, 0));
-    //     *y += 1;
-    // }
-
-    unimplemented!()
-}
-
-fn eq_map<'a, T>(
-    mut a: QGramIter<'a, T>,
-    mut b: QGramIter<'a, T>,
-) -> HashMap<&'a [T], (usize, usize)>
-where
-    T: Hash + Eq,
-{
-    // TODO refactor so it doesn't require Hash
-    let mut set = HashMap::new();
-
-    for qa in a {
-        let (x, _) = set.entry(qa).or_insert((0, 0));
-        *x += 1;
+    // remove duplicates and count how often a qgram occurs
+    fn count_distinct<U: PartialEq>(v: &mut Vec<(U, usize)>) {
+        'outer: for idx in (0..v.len()).rev() {
+            let (qgram, num) = v.swap_remove(idx);
+            for (other, num_other) in v.iter_mut() {
+                if *other == qgram {
+                    *num_other += num;
+                    continue 'outer;
+                }
+            }
+            v.push((qgram, num));
+        }
     }
-    for qb in b {
-        let (_, y) = set.entry(qb).or_insert((0, 0));
-        *y += 1;
-    }
+    let mut distinct_a: Vec<_> = a.map(|s| (s, 1usize)).collect();
+    let mut distinct_b: Vec<_> = b.map(|s| (s, 1usize)).collect();
 
-    set
+    count_distinct(&mut distinct_a);
+    count_distinct(&mut distinct_b);
+
+    let mut nums: Vec<_> = distinct_a.iter().map(|(_, n)| (*n, 0usize)).collect();
+
+    'outer: for (qgram_b, num_b) in distinct_b {
+        for (idx, (qgram_a, num_a)) in distinct_a.iter().enumerate() {
+            if *qgram_a == qgram_b {
+                nums[idx] = (*num_a, num_b);
+                continue 'outer;
+            }
+        }
+        nums.push((0, num_b));
+    }
+    nums
 }
 
 #[cfg(test)]
@@ -654,5 +642,22 @@ mod tests {
         assert_eq!(iter.size_hint(), (1, Some(1)));
         iter.next();
         assert_eq!(iter.size_hint(), (0, Some(0)));
+    }
+
+    #[test]
+    fn count_eq() {
+        let s1: Vec<_> = "abc".chars().collect();
+        let s2: Vec<_> = "abc".chars().collect();
+        let q1 = QGramIter::new(&s1, 2);
+        let q2 = QGramIter::new(&s2, 2);
+
+        assert_eq!(eq_map(q1, q2), vec![(1, 1), (1, 1)]);
+
+        let s1: Vec<_> = "abc".chars().collect();
+        let s2: Vec<_> = "abcdef".chars().collect();
+        let q1 = QGramIter::new(&s1, 2);
+        let q2 = QGramIter::new(&s2, 2);
+
+        assert_eq!(eq_map(q1, q2), vec![(1, 1), (1, 1), (0, 1), (0, 1), (0, 1)]);
     }
 }
