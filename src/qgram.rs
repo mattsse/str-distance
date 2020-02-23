@@ -34,13 +34,18 @@ impl QGram {
 
 impl DistanceMetric for QGram {
     type Dist = usize;
-    fn str_distance<S, T>(&self, a: S, b: T) -> Self::Dist
+
+    fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
     where
-        S: AsRef<str>,
-        T: AsRef<str>,
+        S: IntoIterator,
+        T: IntoIterator,
+        <S as IntoIterator>::IntoIter: Clone,
+        <T as IntoIterator>::IntoIter: Clone,
+        <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
+        <T as IntoIterator>::Item: PartialEq,
     {
-        let a: Vec<_> = a.as_ref().chars().collect();
-        let b: Vec<_> = b.as_ref().chars().collect();
+        let a: Vec<_> = a.into_iter().collect();
+        let b: Vec<_> = b.into_iter().collect();
 
         let iter_a = QGramIter::new(&a, self.q);
         let iter_b = QGramIter::new(&b, self.q);
@@ -51,25 +56,29 @@ impl DistanceMetric for QGram {
             .sum()
     }
 
-    /// Normalize the metric, so that it returns always a f64 between 0 and 1.
-    /// If a str length < q, returns a == b
-    fn str_normalized<S, T>(&self, a: S, b: T) -> f64
+    fn normalized<S, T>(&self, a: S, b: T) -> f64
     where
-        S: AsRef<str>,
-        T: AsRef<str>,
+        S: IntoIterator,
+        T: IntoIterator,
+        <S as IntoIterator>::IntoIter: Clone,
+        <T as IntoIterator>::IntoIter: Clone,
+        <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
+        <T as IntoIterator>::Item: PartialEq,
     {
-        let (a, b) = order_by_len_asc(a.as_ref(), b.as_ref());
+        let a = a.into_iter();
+        let b = b.into_iter();
 
-        let len_a = a.chars().count();
-        if len_a <= self.q {
-            if a == b {
+        let len_a = a.clone().count();
+        let len_b = a.clone().count();
+
+        if len_a.min(len_b) <= self.q {
+            if a.eq(b) {
                 0.
             } else {
                 1.
             }
         } else {
-            let len_b = b.chars().count();
-            self.str_distance(a, b) as f64 / (len_a + len_b - 2 * self.q + 2) as f64
+            self.distance(a, b) as f64 / (len_a + len_b - 2 * self.q + 2) as f64
         }
     }
 }
@@ -106,13 +115,18 @@ impl Cosine {
 
 impl DistanceMetric for Cosine {
     type Dist = f64;
-    fn str_distance<S, T>(&self, a: S, b: T) -> Self::Dist
+
+    fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
     where
-        S: AsRef<str>,
-        T: AsRef<str>,
+        S: IntoIterator,
+        T: IntoIterator,
+        <S as IntoIterator>::IntoIter: Clone,
+        <T as IntoIterator>::IntoIter: Clone,
+        <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
+        <T as IntoIterator>::Item: PartialEq,
     {
-        let a: Vec<_> = a.as_ref().chars().collect();
-        let b: Vec<_> = b.as_ref().chars().collect();
+        let a: Vec<_> = a.into_iter().collect();
+        let b: Vec<_> = b.into_iter().collect();
 
         // edge case where an input is empty
         if a.is_empty() || b.is_empty() {
@@ -131,12 +145,14 @@ impl DistanceMetric for Cosine {
         1.0 - norm_prod as f64 / ((norm_a as f64).sqrt() * (norm_b as f64).sqrt())
     }
 
-    /// Normalize the metric, so that it returns always a f64 between 0 and 1.
-    /// If a str length < q, returns a == b
-    fn str_normalized<S, T>(&self, a: S, b: T) -> f64
+    fn normalized<S, T>(&self, a: S, b: T) -> f64
     where
-        S: AsRef<str>,
-        T: AsRef<str>,
+        S: IntoIterator,
+        T: IntoIterator,
+        <S as IntoIterator>::IntoIter: Clone,
+        <T as IntoIterator>::IntoIter: Clone,
+        <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
+        <T as IntoIterator>::Item: PartialEq,
     {
         normalized_qgram(self, self.q, a, b)
     }
@@ -196,12 +212,14 @@ impl DistanceMetric for Jaccard {
         1.0 - num_intersect as f64 / ((num_dist_a + num_dist_b) as f64 - num_intersect as f64)
     }
 
-    /// Normalize the metric, so that it returns always a f64 between 0 and 1.
-    /// If a str length < q, returns a == b
-    fn str_normalized<S, T>(&self, a: S, b: T) -> f64
+    fn normalized<S, T>(&self, a: S, b: T) -> f64
     where
-        S: AsRef<str>,
-        T: AsRef<str>,
+        S: IntoIterator,
+        T: IntoIterator,
+        <S as IntoIterator>::IntoIter: Clone,
+        <T as IntoIterator>::IntoIter: Clone,
+        <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
+        <T as IntoIterator>::Item: PartialEq,
     {
         normalized_qgram(self, self.q, a, b)
     }
@@ -268,12 +286,14 @@ impl DistanceMetric for SorensenDice {
         1.0 - 2.0 * num_intersect as f64 / (num_dist_a + num_dist_b) as f64
     }
 
-    /// Normalize the metric, so that it returns always a f64 between 0 and 1.
-    /// If a str length < q, returns a == b
-    fn str_normalized<S, T>(&self, a: S, b: T) -> f64
+    fn normalized<S, T>(&self, a: S, b: T) -> f64
     where
-        S: AsRef<str>,
-        T: AsRef<str>,
+        S: IntoIterator,
+        T: IntoIterator,
+        <S as IntoIterator>::IntoIter: Clone,
+        <T as IntoIterator>::IntoIter: Clone,
+        <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
+        <T as IntoIterator>::Item: PartialEq,
     {
         normalized_qgram(self, self.q, a, b)
     }
@@ -342,10 +362,14 @@ impl DistanceMetric for Overlap {
 
     /// Normalize the metric, so that it returns always a f64 between 0 and 1.
     /// If a str length < q, returns a == b
-    fn str_normalized<S, T>(&self, a: S, b: T) -> f64
+    fn normalized<S, T>(&self, a: S, b: T) -> f64
     where
-        S: AsRef<str>,
-        T: AsRef<str>,
+        S: IntoIterator,
+        T: IntoIterator,
+        <S as IntoIterator>::IntoIter: Clone,
+        <T as IntoIterator>::IntoIter: Clone,
+        <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
+        <T as IntoIterator>::Item: PartialEq,
     {
         normalized_qgram(self, self.q, a, b)
     }
@@ -421,20 +445,27 @@ impl<'a, T> Iterator for QGramIter<'a, T> {
 fn normalized_qgram<Q, S, T>(metric: &Q, q: usize, a: S, b: T) -> Q::Dist
 where
     Q: DistanceMetric<Dist = f64>,
-    S: AsRef<str>,
-    T: AsRef<str>,
+    S: IntoIterator,
+    T: IntoIterator,
+    <S as IntoIterator>::IntoIter: Clone,
+    <T as IntoIterator>::IntoIter: Clone,
+    <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
+    <T as IntoIterator>::Item: PartialEq,
 {
-    let (a, b) = order_by_len_asc(a.as_ref(), b.as_ref());
+    let a = a.into_iter();
+    let b = b.into_iter();
 
-    let len_a = a.chars().count();
-    if len_a <= q {
-        if a == b {
+    let len_a = a.clone().count();
+    let len_b = b.clone().count();
+
+    if len_a.min(len_b) <= q {
+        if a.eq(b) {
             0.
         } else {
             1.
         }
     } else {
-        metric.str_distance(a, b)
+        metric.distance(a, b)
     }
 }
 
