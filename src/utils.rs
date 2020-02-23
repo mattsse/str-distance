@@ -55,13 +55,13 @@ where
     T: DoubleEndedIterator + Clone,
     <S as Iterator>::Item: PartialEq<<T as Iterator>::Item>,
 {
-    let s1_len = s1.clone().into_iter().count();
-    let s2_len = s2.clone().into_iter().count();
+    let s1_len = s1.clone().count();
+    let s2_len = s2.clone().count();
 
-    let suffix_len = count_eq(s1.clone().into_iter().rev(), s2.clone().into_iter().rev());
+    let suffix_len = count_eq(s1.clone().rev(), s2.clone().rev());
 
-    let mut s1_iter = s1.clone().into_iter().take(s1_len - suffix_len);
-    let mut s2_iter = s2.clone().into_iter().take(s2_len - suffix_len);
+    let mut s1_iter = s1.take(s1_len - suffix_len);
+    let mut s2_iter = s2.take(s2_len - suffix_len);
 
     let prefix_len = count_eq(s1_iter.clone(), s2_iter.clone());
 
@@ -148,8 +148,8 @@ where
 
         let suffix_len = count_eq(a_vec.into_iter().rev(), b_vec.into_iter().rev());
 
-        let mut a_iter = a.clone().take(a_len - suffix_len);
-        let mut b_iter = b.clone().take(b_len - suffix_len);
+        let mut a_iter = a.take(a_len - suffix_len);
+        let mut b_iter = b.take(b_len - suffix_len);
 
         let prefix_len = count_eq(a_iter.clone(), b_iter.clone());
 

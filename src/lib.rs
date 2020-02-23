@@ -73,10 +73,6 @@ where
     dist.str_normalized(a, b)
 }
 
-fn x() {
-    let x = str_distance("", "", Levenshtein::default());
-}
-
 pub trait DistanceMetric {
     /// Represents the data type in which this distance is evaluated.
     type Dist: PartialOrd;

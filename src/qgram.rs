@@ -496,12 +496,10 @@ where
                 } else {
                     (num_dist_a + 1, num_dist_b, num_intersect)
                 }
+            } else if n2 > 0 {
+                (num_dist_a, num_dist_b + 1, num_intersect)
             } else {
-                if n2 > 0 {
-                    (num_dist_a, num_dist_b + 1, num_intersect)
-                } else {
-                    (num_dist_a, num_dist_b, num_intersect)
-                }
+                (num_dist_a, num_dist_b, num_intersect)
             }
         },
     )

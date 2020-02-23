@@ -295,8 +295,8 @@ where
     let a = a.into_iter();
     let b = b.into_iter();
     if let DistanceValue::Exact(val) = dist.distance(a.clone(), b.clone()) {
-        let len_a = a.into_iter().count();
-        let len_b = b.into_iter().count();
+        let len_a = a.count();
+        let len_b = b.count();
         if len_a + len_b == 0 {
             0.
         } else {

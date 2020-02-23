@@ -49,12 +49,10 @@ impl<D: DistanceMetric> DistanceMetric for TokenSet<D> {
             } else {
                 dist_a_b
             }
+        } else if dist_inter_b < dist_a_b {
+            dist_inter_b
         } else {
-            if dist_inter_b < dist_a_b {
-                dist_inter_b
-            } else {
-                dist_a_b
-            }
+            dist_a_b
         }
     }
 
@@ -97,12 +95,10 @@ impl<D: DistanceMetric> DistanceMetric for TokenSet<D> {
             } else {
                 dist_a_b
             }
+        } else if dist_inter_b < dist_a_b {
+            dist_inter_b
         } else {
-            if dist_inter_b < dist_a_b {
-                dist_inter_b
-            } else {
-                dist_a_b
-            }
+            dist_a_b
         }
     }
 }
