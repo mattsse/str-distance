@@ -1,8 +1,71 @@
-//! Compute distances between strings
-
-// TODO add some remarks about coefficient vs distance (= 1 - coefficient):
-// in contrast to the coefficient/index of a metric, distance is a measure of dissimilarity
-// see for example: https://en.wikipedia.org/wiki/Jaccard_index
+//! Compute distances between strings types (and others)
+//!
+//! This crate provides implementations for a variety of distance or equality
+//! metrics. When using metrics that are a measure of **similarity**, the
+//! following should be noted: All implementations always return the value of
+//! the distance between two elements (e.g. str), i.e. their degree of
+//! **dissimilarity**. Which the implemented metrics that are designed to measure similarity (e.g. [Jaccard index](https://en.wikipedia.org/wiki/Jaccard_index)) will return the distance, which is complementary to the similarity score.
+//!
+//! # Usage
+//!
+//! ## The `str_distance::str_distance*` convenience functions.
+//!
+//! `str_distance` and `str_distance_normalized` take the two string inputs for
+//! which the distance is determined using the passed 'DistanceMetric`.
+//! `str_distance_normalized` evaluates the normalized distance between two
+//! strings. A value of '0.0' corresponds to the "zero distance", both strings
+//! are considered equal by means of the metric, whereas a value of '1.0'
+//! corresponds to the maximum distance that can exist between the strings.
+//!
+//! Calling the `str_distance::str_distance*` is just convenience for
+//! `DistanceMetric.str_distance*("", "")`
+//!
+//! ### Example
+//!
+//! Levenshtein metrics offer the possibility to define a maximum distance at
+//! which the further calculation of the exact distance is aborted early.
+//!
+//! **Distance**
+//!
+//! ```rust
+//! use str_distance::*;
+//!
+//! // calculate the exact distance
+//! assert_eq!(str_distance("kitten", "sitting", Levenshtein::default()), DistanceValue::Exact(3));
+//!
+//! // short circuit if distance exceeds 10
+//! let s1 = "Wisdom is easily acquired when hiding under the bed with a saucepan on your head.";
+//! let s2 = "The quick brown fox jumped over the angry dog.";
+//! assert_eq!(str_distance(s1, s2, Levenshtein::with_max_distance(10)), DistanceValue::Exceeded(10));
+//! ```
+//!
+//! **Normalized Distance**
+//!
+//! ```rust
+//! use str_distance::*;
+//! assert_eq!(str_distance_normalized("" , "", Levenshtein::default()), 0.0);
+//! assert_eq!(str_distance_normalized("nacht", "nacht", Levenshtein::default()), 0.0);
+//! assert_eq!(str_distance_normalized("abc", "def", Levenshtein::default()), 1.0);
+//! ```
+//!
+//! ## The `DistanceMetric` trait
+//!
+//! ```rust
+//! use str_distance::{DistanceMetric, SorensenDice};
+//! // QGram metrics require the length of the underlying fragment length to use for comparison.
+//! // For `SorensenDice` default is 2.
+//! assert_eq!(SorensenDice::new(2).str_distance("nacht", "night"), 0.75);
+//! ```
+//!
+//! `DistanceMetric` was designed for `str` types, but is not limited to.
+//! Calculating distance is possible for all data types which are comparable and
+//! are passed as 'IntoIterator', e.g. as `Vec`
+//!
+//! ```rust
+//! use str_distance::{DistanceMetric, Levenshtein, DistanceValue};
+//!
+//! assert_eq!(*Levenshtein::default().distance(&[1,2,3], &[1,2,3,4,5,6]),3);
+//! ```
 
 #![forbid(unsafe_code)]
 #![allow(unused)]
@@ -61,7 +124,7 @@ where
 /// # use str_distance::{Levenshtein, SorensenDice, TokenSet, RatcliffObershelp,
 /// DistanceValue, str_distance_normalized};
 /// assert_eq!(str_distance_normalized("" , "", Levenshtein::default()), 0.0);
-/// assert_eq!(str_distance_normalized(" nacht", "nacht",
+/// assert_eq!(str_distance_normalized("nacht", "nacht",
 /// Levenshtein::default()), 0.0); assert_eq!(strdistance_normalized("abc",
 /// "def", Levenshtein::default()), 1.0); ```
 pub fn str_distance_normalized<S, T, D>(a: S, b: T, dist: D) -> f64
@@ -99,7 +162,10 @@ pub trait DistanceMetric {
         self.distance(a.as_ref().chars(), b.as_ref().chars())
     }
 
-    /// Generic implementation of the normalized metric.
+    /// Evaluates the normalized distance between two strings
+    /// A value of '0.0' corresponds to the "zero distance", both strings are
+    /// considered equal by means of the metric, whereas a value of '1.0'
+    /// corresponds to the maximum distance that can exist between the strings.
     fn normalized<S, T>(&self, a: S, b: T) -> f64
     where
         S: IntoIterator,
