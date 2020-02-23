@@ -31,59 +31,8 @@ impl DistanceMetric for Levenshtein {
         <T as IntoIterator>::IntoIter: Clone,
         <S as IntoIterator>::Item: PartialEq<<T as IntoIterator>::Item>,
     {
-        unimplemented!()
-        // // exclude matching prefix and suffix
-        // let mut delim = delim_distinct(a.into_iter(), b.into_iter());
-        //
-        // if delim.remaining_s1() == 0 {
-        //     // the longer str starts or ends completely with the shorter str
-        //     return DistanceValue::Exact(delim.remaining_s2());
-        // }
-        //
-        // if let Some(max_dist) = self.max_distance {
-        //     if delim.remaining_s2() - delim.remaining_s1() > max_dist {
-        //         return DistanceValue::Exceeded(max_dist);
-        //     }
-        // }
-        //
-        // let max_dist = self.max_distance.unwrap_or_else(||
-        // delim.remaining_s2());
-        //
-        // let mut cache: Vec<usize> = (1..=delim.remaining_s2()).collect();
-        //
-        // let mut result = 0;
-        //
-        // for (c1_idx, c1) in delim.distinct_s1.enumerate() {
-        //     result = c1_idx + 1;
-        //     let mut dist_c2 = c1_idx;
-        //     let mut min_dist = if c1_idx == 0 { 0 } else { c1_idx - 1 };
-        //
-        //     for (c2_idx, c2) in delim.distinct_s2.clone().enumerate() {
-        //         let cost = if c1 == c2 { 0usize } else { 1usize };
-        //         let dist_c1 = dist_c2 + cost;
-        //         dist_c2 = cache[c2_idx];
-        //         result = min(result + 1, min(dist_c1, dist_c2 + 1));
-        //         min_dist = min(min_dist, dist_c2);
-        //         cache[c2_idx] = result;
-        //     }
-        //     if min_dist > max_dist {
-        //         return DistanceValue::Exceeded(max_dist);
-        //     }
-        // }
-        //
-        // DistanceValue::Exact(result)
-    }
-
-    fn str_distance<S, T>(&self, a: S, b: T) -> Self::Dist
-    where
-        S: AsRef<str>,
-        T: AsRef<str>,
-    {
-        // make sure we use the shortest str for the outer loop
-        let (a, b) = order_by_len_asc(a.as_ref(), b.as_ref());
-
         // exclude matching prefix and suffix
-        let mut delim = DelimDistinct::delim_distinct(a.chars(), b.chars());
+        let mut delim = DelimDistinct::delim_distinct(a.into_iter(), b.into_iter());
 
         if delim.remaining_s1() == 0 {
             // the longer str starts or ends completely with the shorter str
@@ -123,12 +72,34 @@ impl DistanceMetric for Levenshtein {
         DistanceValue::Exact(result)
     }
 
+    fn str_distance<S, T>(&self, a: S, b: T) -> Self::Dist
+    where
+        S: AsRef<str>,
+        T: AsRef<str>,
+    {
+        // make sure we use the shortest str for the outer loop
+        let (a, b) = order_by_len_asc(a.as_ref(), b.as_ref());
+        self.distance(a.chars(), b.chars())
+    }
+
+    fn normalized<S, T>(&self, a: S, b: T) -> f64
+    where
+        S: IntoIterator,
+        T: IntoIterator,
+        <S as IntoIterator>::IntoIter: Clone,
+        <T as IntoIterator>::IntoIter: Clone,
+        <S as IntoIterator>::Item: PartialEq<<T as IntoIterator>::Item>,
+    {
+        normalized_levenshtein(self, a, b)
+    }
+
     fn str_normalized<S, T>(&self, a: S, b: T) -> f64
     where
         S: AsRef<str>,
         T: AsRef<str>,
     {
-        normalized_levenshtein(self, a, b)
+        let (a, b) = order_by_len_asc(a.as_ref(), b.as_ref());
+        normalized_levenshtein(self, a.chars(), b.chars())
     }
 }
 
@@ -285,27 +256,41 @@ impl DistanceMetric for DamerauLevenshtein {
         }
     }
 
+    fn normalized<S, T>(&self, a: S, b: T) -> f64
+    where
+        S: IntoIterator,
+        T: IntoIterator,
+        <S as IntoIterator>::IntoIter: Clone,
+        <T as IntoIterator>::IntoIter: Clone,
+        <S as IntoIterator>::Item: PartialEq<<T as IntoIterator>::Item>,
+    {
+        normalized_levenshtein(self, a, b)
+    }
+
     fn str_normalized<S, T>(&self, a: S, b: T) -> f64
     where
         S: AsRef<str>,
         T: AsRef<str>,
     {
-        normalized_levenshtein(self, a, b)
+        let (a, b) = order_by_len_asc(a.as_ref(), b.as_ref());
+        normalized_levenshtein(self, a.chars(), b.chars())
     }
 }
 
 fn normalized_levenshtein<D, S, T>(dist: &D, a: S, b: T) -> f64
 where
     D: DistanceMetric<Dist = DistanceValue>,
-    S: AsRef<str>,
-    T: AsRef<str>,
+    S: IntoIterator,
+    T: IntoIterator,
+    <S as IntoIterator>::IntoIter: Clone,
+    <T as IntoIterator>::IntoIter: Clone,
+    <S as IntoIterator>::Item: PartialEq<<T as IntoIterator>::Item>,
 {
-    let a = a.as_ref();
-    let b = b.as_ref();
-
-    if let DistanceValue::Exact(val) = dist.str_distance(a, b) {
-        let len_a = a.chars().count();
-        let len_b = b.chars().count();
+    let a = a.into_iter();
+    let b = b.into_iter();
+    if let DistanceValue::Exact(val) = dist.distance(a.clone(), b.clone()) {
+        let len_a = a.into_iter().count();
+        let len_b = b.into_iter().count();
         if len_a + len_b == 0 {
             0.
         } else {
