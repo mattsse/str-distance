@@ -88,7 +88,8 @@ pub trait DistanceMetric {
         T: IntoIterator,
         <S as IntoIterator>::IntoIter: Clone,
         <T as IntoIterator>::IntoIter: Clone,
-        <S as IntoIterator>::Item: PartialEq<<T as IntoIterator>::Item>,
+        <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
+        <T as IntoIterator>::Item: PartialEq,
     {
         unimplemented!()
     }
@@ -109,7 +110,8 @@ pub trait DistanceMetric {
         T: IntoIterator,
         <S as IntoIterator>::IntoIter: Clone,
         <T as IntoIterator>::IntoIter: Clone,
-        <S as IntoIterator>::Item: PartialEq<<T as IntoIterator>::Item>,
+        <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
+        <T as IntoIterator>::Item: PartialEq,
     {
         unimplemented!()
     }

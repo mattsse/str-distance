@@ -20,7 +20,8 @@ impl DistanceMetric for RatcliffObershelp {
         T: IntoIterator,
         <S as IntoIterator>::IntoIter: Clone,
         <T as IntoIterator>::IntoIter: Clone,
-        <S as IntoIterator>::Item: PartialEq<<T as IntoIterator>::Item>,
+        <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
+        <T as IntoIterator>::Item: PartialEq,
     {
         let a = a.into_iter();
         let b = b.into_iter();
@@ -41,7 +42,8 @@ impl DistanceMetric for RatcliffObershelp {
         T: IntoIterator,
         <S as IntoIterator>::IntoIter: Clone,
         <T as IntoIterator>::IntoIter: Clone,
-        <S as IntoIterator>::Item: PartialEq<<T as IntoIterator>::Item>,
+        <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
+        <T as IntoIterator>::Item: PartialEq,
     {
         self.distance(a, b)
     }

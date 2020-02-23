@@ -352,29 +352,9 @@ impl DistanceMetric for Overlap {
     }
 }
 
-fn eq_map<'a, T>(
-    mut a: QGramIter<'a, T>,
-    mut b: QGramIter<'a, T>,
-) -> HashMap<&'a [T], (usize, usize)>
-where
-    T: Hash + Eq,
-{
-    let mut set = HashMap::new();
-
-    for qa in a {
-        let (x, _) = set.entry(qa).or_insert((0, 0));
-        *x += 1;
-    }
-    for qb in b {
-        let (_, y) = set.entry(qb).or_insert((0, 0));
-        *y += 1;
-    }
-
-    set
-}
-
 /// A Iterator that behaves similar to [`std::slice::Chunks`], but increases the
 /// start index into the slice only by one each iteration.
+#[derive(Debug, Clone)]
 pub(crate) struct QGramIter<'a, T> {
     items: &'a [T],
     index: usize,
@@ -398,6 +378,11 @@ impl<'a, T> QGramIter<'a, T> {
             chunk_size,
             index: 0,
         }
+    }
+
+    /// Resets the index back the beginning.
+    fn reset(&mut self) {
+        self.index = 0;
     }
 }
 
@@ -476,6 +461,59 @@ where
             }
         },
     )
+}
+
+fn eq_map2<'a, S, T>(
+    mut a: QGramIter<'a, S>,
+    mut b: QGramIter<'a, T>,
+) -> HashMap<&'a [T], (usize, usize)>
+where
+    S: PartialEq<T>,
+{
+    // TODO refactor so it doesn't require Hash
+
+    let mut cache_a: Vec<_> = a.map(|s| (s, 1usize, 0usize)).collect();
+
+    let cache_b: Vec<_> = b.map(|s| (s, 1usize, 0usize)).collect();
+
+    // make  a distinct, make b disntict
+
+    // let mut set = HashMap::new();
+    //
+    // set.insert(a.next().unwrap(), 1);
+    //
+    // for qa in a {
+    //     let (x, _) = set.entry(qa).or_insert((0, 0));
+    //     *x += 1;
+    // }
+    // for qb in b {
+    //     let (_, y) = set.entry(qb).or_insert((0, 0));
+    //     *y += 1;
+    // }
+
+    unimplemented!()
+}
+
+fn eq_map<'a, T>(
+    mut a: QGramIter<'a, T>,
+    mut b: QGramIter<'a, T>,
+) -> HashMap<&'a [T], (usize, usize)>
+where
+    T: Hash + Eq,
+{
+    // TODO refactor so it doesn't require Hash
+    let mut set = HashMap::new();
+
+    for qa in a {
+        let (x, _) = set.entry(qa).or_insert((0, 0));
+        *x += 1;
+    }
+    for qb in b {
+        let (_, y) = set.entry(qb).or_insert((0, 0));
+        *y += 1;
+    }
+
+    set
 }
 
 #[cfg(test)]
