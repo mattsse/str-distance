@@ -28,14 +28,14 @@ mod utils;
 /// # Examples
 ///
 /// ```
-/// # use str_distance::{Levenshtein, strdistance, SorensenDice, TokenSet, RatcliffObershelp, DistanceValue};
-/// assert_eq!(strdistance("kitten", "sitting", Levenshtein::default()), DistanceValue::Exact(3));
-/// assert_eq!(strdistance("kitten", "sitting", Levenshtein::with_max_distance(1)), DistanceValue::Exceeded(1));
-/// assert_eq!(strdistance("nacht", "night", SorensenDice::default()), 0.75);
-/// assert_eq!(strdistance("Real Madrid vs FC Barcelona", "Barcelona vs Real Madrid",
+/// # use str_distance::{Levenshtein, str_distance, SorensenDice, TokenSet, RatcliffObershelp, DistanceValue};
+/// assert_eq!(str_distance("kitten", "sitting", Levenshtein::default()), DistanceValue::Exact(3));
+/// assert_eq!(str_distance("kitten", "sitting", Levenshtein::with_max_distance(1)), DistanceValue::Exceeded(1));
+/// assert_eq!(str_distance("nacht", "night", SorensenDice::default()), 0.75);
+/// assert_eq!(str_distance("Real Madrid vs FC Barcelona", "Barcelona vs Real Madrid",
 /// TokenSet::new(RatcliffObershelp)), 0.0);
 /// ```
-pub fn strdistance<S, T, D>(a: S, b: T, dist: D) -> <D as DistanceMetric>::Dist
+pub fn str_distance<S, T, D>(a: S, b: T, dist: D) -> <D as DistanceMetric>::Dist
 where
     S: AsRef<str>,
     T: AsRef<str>,
@@ -59,12 +59,12 @@ where
 ///
 /// /// ```
 /// # use str_distance::{Levenshtein, SorensenDice, TokenSet, RatcliffObershelp,
-/// DistanceValue, strdistance_normalized}; assert_eq!(strdistance_normalized(""
-/// , "", Levenshtein::default()), 0.0); assert_eq!(strdistance_normalized("
-/// nacht", "nacht", Levenshtein::default()), 0.0);
-/// assert_eq!(strdistance_normalized("abc", "def", Levenshtein::default()),
-/// 1.0); ```
-pub fn strdistance_normalized<S, T, D>(a: S, b: T, dist: D) -> f64
+/// DistanceValue, str_distance_normalized};
+/// assert_eq!(str_distance_normalized("" , "", Levenshtein::default()), 0.0);
+/// assert_eq!(str_distance_normalized(" nacht", "nacht",
+/// Levenshtein::default()), 0.0); assert_eq!(strdistance_normalized("abc",
+/// "def", Levenshtein::default()), 1.0); ```
+pub fn str_distance_normalized<S, T, D>(a: S, b: T, dist: D) -> f64
 where
     S: AsRef<str>,
     T: AsRef<str>,
@@ -74,7 +74,7 @@ where
 }
 
 fn x() {
-    let x = strdistance("", "", Levenshtein::default());
+    let x = str_distance("", "", Levenshtein::default());
 }
 
 pub trait DistanceMetric {
