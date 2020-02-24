@@ -59,7 +59,7 @@
 //!
 //! `DistanceMetric` was designed for `str` types, but is not limited to.
 //! Calculating distance is possible for all data types which are comparable and
-//! are passed as 'IntoIterator', e.g. as `Vec`
+//! are passed as 'IntoIterator', e.g. as `Vec` or slice
 //!
 //! ```rust
 //! use str_distance::{DistanceMetric, Levenshtein, DistanceValue};
@@ -72,7 +72,7 @@
 
 use std::ops::Deref;
 
-pub use jaro::{Jaro, JaroWinkler};
+pub use jaro::{Jaro, Winkler};
 pub use levenshtein::{DamerauLevenshtein, Levenshtein};
 pub use qgram::{Cosine, Jaccard, Overlap, QGram, SorensenDice};
 pub use ratcliff::RatcliffObershelp;

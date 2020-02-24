@@ -89,69 +89,114 @@ impl DistanceMetric for Jaro {
     }
 }
 
-        for (s1_idx, c1) in s1.chars().enumerate() {
-            let min_bound =
-                // prevent integer wrapping
-                if s1_idx > max_dist {
-                    0.max( s1_idx - max_dist)
-                } else {
-                    0
-                };
+/// `Winkler` modifies a [`DistanceMetric`]'s distance to decrease the distance
+/// between  two strings, when their original distance is below some
+/// `threshold`. The boost is equal to `min(l,  maxlength) * p * dist` where `l`
+/// denotes the length of their common prefix and `dist` denotes the original
+/// distance. The Winkler adjustment was originally defined for the [`Jaro`]
+/// similarity score but is here defined it for any distance.
+#[derive(Debug, Clone)]
+pub struct Winkler<D: DistanceMetric> {
+    inner: D,
+    config: WinklerConfig,
+    // TODO add max distance
+}
 
-            let max_bound = (s2_len - 1).min(s1_idx + max_dist);
+#[derive(Debug, Clone)]
+pub struct WinklerConfig {
+    /// scaling factor. Default to 0.1
+    pub p: f64,
+    /// boost threshold. Default to 0.7
+    pub threshold: f64,
+    /// max length of common prefix. Default to 4
+    pub max_length: usize,
+}
 
-            if min_bound > max_bound {
-                continue;
-            }
-
-            for (s2_idx, c2) in s2.chars().enumerate() {
-                if min_bound <= s2_idx && s2_idx <= max_bound && c1 == c2 && !flags[s2_idx] {
-                    flags[s2_idx] = true;
-                    matches += 1.0;
-
-                    if s2_idx < c2_match_idx {
-                        transpositions += 1.0;
-                    }
-                    c2_match_idx = s2_idx;
-                    break;
-                }
-            }
+impl<D: DistanceMetric> Winkler<D> {
+    pub fn new(inner: D) -> Self {
+        Self {
+            inner,
+            config: Default::default(),
         }
+    }
 
-        if matches == 0.0 {
-            0.0
-        } else {
-            (1.0 / 3.0)
-                * ((matches / s1_len as f64)
-                    + (matches / s2_len as f64)
-                    + ((matches - transpositions) / matches))
+    pub fn with_config(inner: D, config: WinklerConfig) -> Self {
+        Self { inner, config }
+    }
+}
+
+impl Default for WinklerConfig {
+    fn default() -> Self {
+        Self {
+            p: 0.1,
+            threshold: 0.7,
+            max_length: 4,
         }
     }
 }
 
-pub struct JaroWinkler;
+impl Default for Winkler<Jaro> {
+    fn default() -> Self {
+        Self {
+            inner: Jaro,
+            config: Default::default(),
+        }
+    }
+}
 
-impl DistanceMetric for JaroWinkler {
+impl<D> DistanceMetric for Winkler<D>
+where
+    D: DistanceMetric,
+    <D as DistanceMetric>::Dist: Into<f64>,
+{
     type Dist = f64;
-    #[inline]
+
+    fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
+    where
+        S: IntoIterator,
+        T: IntoIterator,
+        <S as IntoIterator>::IntoIter: Clone,
+        <T as IntoIterator>::IntoIter: Clone,
+        <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
+        <T as IntoIterator>::Item: PartialEq,
+    {
+        // scaling factor times maxlength of common prefix must be lower than one
+        assert!(self.config.p * self.config.max_length as f64 <= 1.);
+
+        // let a = a.into_iter();
+        // let b = b.into_iter();
+        // let mut dist = Jaro.distance(a.clone(),b.clone());
+        // let prefix_ctn = count_eq(a, b);
+        //
+        // dist += 0.1 * prefix_ctn as f64 * (1.0 - dist);
+        //
+        // if dist <= 1.0 {
+        //     0.0
+        // } else {
+        //     1.0
+        // }
+        unimplemented!()
+    }
+
     fn str_distance<S, T>(&self, s1: S, s2: T) -> Self::Dist
     where
         S: AsRef<str>,
         T: AsRef<str>,
     {
-        let s1 = s1.as_ref();
-        let s2 = s2.as_ref();
-        let mut dist = Jaro.str_distance(s1, s2);
+        let (s1, s2) = order_by_len_asc(s1.as_ref(), s2.as_ref());
+        self.distance(s1.chars(), s2.chars())
+    }
 
-        let prefix_ctn = count_eq(s1.chars(), s2.chars());
-
-        dist += 0.1 * prefix_ctn as f64 * (1.0 - dist);
-
-        if dist <= 1.0 {
-            0.0
-        } else {
-            1.0
-        }
+    fn normalized<S, T>(&self, a: S, b: T) -> f64
+    where
+        S: IntoIterator,
+        T: IntoIterator,
+        <S as IntoIterator>::IntoIter: Clone,
+        <T as IntoIterator>::IntoIter: Clone,
+        <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
+        <T as IntoIterator>::Item: PartialEq,
+    {
+        self.distance(a, b)
     }
 }
 
