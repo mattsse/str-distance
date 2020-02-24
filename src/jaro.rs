@@ -159,36 +159,24 @@ impl DistanceMetric for JaroWinkler {
 mod tests {
     use super::*;
 
-    /// https://github.com/apache/commons-text/blob/master/src/main/java/org/apache/commons/text/similarity/JaroWinklerDistance.java
     #[test]
-    fn jaro_winkler() {
-        assert_eq!(JaroWinkler.str_distance("", ""), 0.0);
-        assert_eq!(JaroWinkler.str_distance("foo", "foo"), 0.0);
-        //        assert_eq!(JaroWinkler.distance("foo", "foo "), 0.06);
-        //        assert_eq!(JaroWinkler.distance("foo", "foo  "), 0.09);
-        //        assert_eq!(JaroWinkler.distance("foo", " foo "), 0.13);
-        //        assert_eq!(JaroWinkler.distance("foo", "  foo"), 0.49);
-        //        assert_eq!(JaroWinkler.distance("", "a"), 1.0);
-        //        assert_eq!(JaroWinkler.distance("aaapppp", ""), 1.0);
-        //        assert_eq!(JaroWinkler.distance("frog", "fog"), 0.07);
-        //        assert_eq!(JaroWinkler.distance("fly", "ant"), 1.0);
-        //        assert_eq!(JaroWinkler.distance("elephant", "hippo"), 0.56);
-        //        assert_eq!(JaroWinkler.distance("hippo", "elephant"), 0.56);
-        //        assert_eq!(JaroWinkler.distance("hippo", "zzzzzzzz"), 1.0);
-        //        assert_eq!(JaroWinkler.distance("hello", "hallo"), 0.12);
-        //        assert_eq!(JaroWinkler.distance("ABC Corporation", "ABC
-        // Corp"), 0.09);        assert_eq!(
-        //            JaroWinkler.distance("D N H Enterprises Inc", "D &amp; H
-        // Enterprises, Inc."),            0.05
-        //        );
-        //        assert_eq!(
-        //            JaroWinkler.distance(
-        //                "My Gym Children's Fitness Center",
-        //                "My Gym. Childrens); Fitness"
-        //            ),
-        //            0.08
-        //        );
-        //        assert_eq!(JaroWinkler.distance("PENNSYLVANIA",
-        // "PENNCISYLVNIA"), 0.12);
+    fn jaro() {
+        assert_eq!(Jaro.str_distance("", ""), 0.0);
+        assert_eq!(Jaro.str_distance("foo", "foo"), 0.0);
+        assert_eq!(
+            format!("{:.6}", Jaro.str_distance("foo", "foo ")),
+            "0.083333"
+        );
+        assert_eq!(
+            format!(
+                "{:.6}",
+                Jaro.str_distance("D N H Enterprises Inc", "D &amp; H Enterprises, Inc.")
+            ),
+            "0.177293"
+        );
+        assert_eq!(
+            format!("{:.6}", Jaro.str_distance("elephant", "hippo")),
+            "0.558333"
+        );
     }
 }
