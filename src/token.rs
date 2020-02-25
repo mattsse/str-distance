@@ -1,7 +1,4 @@
-use crate::qgram::QGramIter;
-use crate::utils::order_by_len_asc;
-use crate::{DistanceMetric, RatcliffObershelp};
-use std::cmp;
+use crate::DistanceMetric;
 
 /// A TokenSet distance modifies the distance of its `inner` `[Distance]` to
 /// adjust for differences in word orders and word numbers by comparing the
@@ -117,83 +114,6 @@ impl<D: DistanceMetric> DistanceMetric for TokenSet<D> {
     }
 }
 
-/// `Partial` metric modifies the string distance of its inner metric to return
-/// the minimum distance  between the shorter string and slices of the longer
-/// string
-pub struct Partial<D: DistanceMetric> {
-    /// The base distance to modify.
-    inner: D,
-}
-
-impl<D: DistanceMetric> Partial<D> {
-    /// Create a new [`Partial`] distance metric using distance `D` as base.
-    pub fn new(inner: D) -> Self {
-        Self { inner }
-    }
-}
-
-impl<D> DistanceMetric for Partial<D>
-where
-    D: DistanceMetric,
-    <D as DistanceMetric>::Dist: Into<f64>,
-{
-    type Dist = f64;
-
-    /// Generic implementation of the metric.
-    fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
-    where
-        S: IntoIterator,
-        T: IntoIterator,
-        <S as IntoIterator>::IntoIter: Clone,
-        <T as IntoIterator>::IntoIter: Clone,
-        <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
-        <T as IntoIterator>::Item: PartialEq,
-    {
-        let a = a.into_iter();
-        let b = b.into_iter();
-
-        let len_a = a.clone().count();
-        let len_b = b.clone().count();
-
-        if len_a == len_b {
-            return self.inner.distance(a.clone(), b.clone()).into();
-        }
-        if cmp::min(len_a, len_b) == 0 {
-            return 1.;
-        }
-
-        let s2: Vec<_> = b.clone().collect();
-        let mut out = 1.;
-
-        for qgram in QGramIter::new(&s2, len_a) {
-            let current = self.inner.distance(a.clone(), b.clone()).into();
-            out = if out < current { out } else { current };
-        }
-
-        out
-    }
-
-    fn str_distance<S, T>(&self, a: S, b: T) -> Self::Dist
-    where
-        S: AsRef<str>,
-        T: AsRef<str>,
-    {
-        let (a, b) = order_by_len_asc(a.as_ref(), b.as_ref());
-        self.distance(a.chars(), b.chars())
-    }
-
-    fn normalized<S, T>(&self, a: S, b: T) -> f64
-    where
-        S: IntoIterator,
-        T: IntoIterator,
-        <S as IntoIterator>::IntoIter: Clone,
-        <T as IntoIterator>::IntoIter: Clone,
-        <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
-        <T as IntoIterator>::Item: PartialEq,
-    {
-        self.distance(a, b)
-    }
-}
 /// `TokenSort` modifies the inner string distance `dist` to adjust for
 /// differences in word orders by reording words alphabetically.
 ///

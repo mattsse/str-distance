@@ -1,7 +1,7 @@
+use std::cmp;
+
 use crate::utils::{count_eq, order_by_len_asc};
 use crate::{DistanceMetric, Jaro};
-
-use std::cmp;
 
 #[derive(Debug, Clone)]
 pub struct WinklerConfig {

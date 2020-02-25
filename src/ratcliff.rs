@@ -83,7 +83,6 @@ where
 
     /// Finds the longest substr of both iters the recursively find the
     /// longest substr of both tails.
-    // TODO provide HashSet::<(usize, usize, usize) to track positions?
     fn match_sequences(self) -> usize {
         let subseq = longest_common_subsequence(
             self.s1.clone().skip(self.start1).take(self.len1),

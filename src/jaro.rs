@@ -1,7 +1,8 @@
-use crate::modifiers::Winkler;
-use crate::utils::{count_eq, order_by_len_asc};
-use crate::DistanceMetric;
 use std::cmp;
+
+use crate::modifiers::Winkler;
+use crate::utils::order_by_len_asc;
+use crate::DistanceMetric;
 
 pub struct Jaro;
 
@@ -91,6 +92,7 @@ impl DistanceMetric for Jaro {
     }
 }
 
+/// Jaro Distance with winkler modification.
 pub type JaroWinkler = Winkler<Jaro>;
 
 #[cfg(test)]

@@ -68,7 +68,6 @@
 //! ```
 
 #![forbid(unsafe_code)]
-#![allow(unused)]
 
 use std::ops::Deref;
 
@@ -77,7 +76,7 @@ pub use levenshtein::{DamerauLevenshtein, Levenshtein};
 pub use modifiers::{Winkler, WinklerConfig};
 pub use qgram::{Cosine, Jaccard, Overlap, QGram, SorensenDice};
 pub use ratcliff::RatcliffObershelp;
-pub use token::{Partial, TokenSet, TokenSort};
+pub use token::{TokenSet, TokenSort};
 
 pub mod jaro;
 pub mod levenshtein;
