@@ -5,7 +5,7 @@ authors = ["Matthias Seitz <matthias.seitz@tum.de>"]
 edition = "2018"
 license = "MIT or Apache 2.0"
 categories = ["Text processing", "nlp"]
-keywords = ["string", "distance", "similarity", "Levenshtein", "Jaro", "Qgram"]
+keywords = ["string", "distance", "similarity", "Levenshtein", "Jaro"]
 description = "Distance metrics to evaluate distances between strings."
 documentation = "https://docs.rs/str-distance/"
 
