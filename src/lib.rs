@@ -74,9 +74,10 @@ use std::ops::Deref;
 
 pub use jaro::{Jaro, JaroWinkler};
 pub use levenshtein::{DamerauLevenshtein, Levenshtein};
+pub use modifiers::{Winkler, WinklerConfig};
 pub use qgram::{Cosine, Jaccard, Overlap, QGram, SorensenDice};
 pub use ratcliff::RatcliffObershelp;
-pub use token::TokenSet;
+pub use token::{Partial, TokenSet, TokenSort};
 
 pub mod jaro;
 pub mod levenshtein;
