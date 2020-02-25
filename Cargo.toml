@@ -1,7 +1,7 @@
 [package]
 name = "str-distance"
 version = "0.1.0"
-authors = ["mattsse <matthias.seitz@tum.de>"]
+authors = ["Matthias Seitz <matthias.seitz@tum.de>"]
 edition = "2018"
 license = "MIT or Apache 2.0"
 categories = ["Text processing", "nlp"]
@@ -13,9 +13,6 @@ repository = "https://github.com/mattsse/str-distance"
 
 [badges]
 travis-ci = { repository = "https://github.com/mattsse/str-distance" }
-
-[dependencies]
-
 
 [dev-dependencies]
 strsim = "0.10.0"
