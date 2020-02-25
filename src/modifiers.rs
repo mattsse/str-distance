@@ -46,7 +46,9 @@ impl Default for WinklerConfig {
 /// similarity score but is here defined it for any distance.
 #[derive(Debug, Clone)]
 pub struct Winkler<D: DistanceMetric> {
+    /// The base distance to modify.
     inner: D,
+    /// Coefficients for winkler modification.
     config: WinklerConfig,
 }
 

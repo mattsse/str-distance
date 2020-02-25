@@ -149,10 +149,7 @@ pub trait DistanceMetric {
         <S as IntoIterator>::IntoIter: Clone,
         <T as IntoIterator>::IntoIter: Clone,
         <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
-        <T as IntoIterator>::Item: PartialEq,
-    {
-        unimplemented!()
-    }
+        <T as IntoIterator>::Item: PartialEq;
 
     /// Evaluates the distance between two str.
     fn str_distance<S, T>(&self, a: S, b: T) -> Self::Dist
@@ -174,10 +171,7 @@ pub trait DistanceMetric {
         <S as IntoIterator>::IntoIter: Clone,
         <T as IntoIterator>::IntoIter: Clone,
         <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
-        <T as IntoIterator>::Item: PartialEq,
-    {
-        unimplemented!()
-    }
+        <T as IntoIterator>::Item: PartialEq;
 
     /// Convenience normalization for str types.
     fn str_normalized<S, T>(&self, a: S, b: T) -> f64

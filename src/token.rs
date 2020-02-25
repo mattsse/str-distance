@@ -8,6 +8,7 @@ use crate::DistanceMetric;
 ///
 /// http://chairnerd.seatgeek.com/fuzzywuzzy-fuzzy-string-matching-in-python/
 pub struct TokenSet<D: DistanceMetric> {
+    /// The base distance to modify.
     inner: D,
 }
 
@@ -101,12 +102,25 @@ impl<D: DistanceMetric> DistanceMetric for TokenSet<D> {
             dist_a_b
         }
     }
+
+    fn normalized<S, T>(&self, a: S, b: T) -> f64
+    where
+        S: IntoIterator,
+        T: IntoIterator,
+        <S as IntoIterator>::IntoIter: Clone,
+        <T as IntoIterator>::IntoIter: Clone,
+        <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
+        <T as IntoIterator>::Item: PartialEq,
+    {
+        self.inner.normalized(a, b)
+    }
 }
 
 /// `Partial` metric modifies the string distance of its inner metric to return
 /// the minimum distance  between the shorter string and slices of the longer
 /// string
 pub struct Partial<D: DistanceMetric> {
+    /// The base distance to modify.
     inner: D,
 }
 
@@ -117,38 +131,42 @@ impl<D: DistanceMetric> Partial<D> {
     }
 }
 
-impl<D, U> DistanceMetric for Partial<D>
+impl<D> DistanceMetric for Partial<D>
 where
-    D: DistanceMetric<Dist = U>,
-    U: Into<f64> + PartialOrd,
+    D: DistanceMetric,
+    <D as DistanceMetric>::Dist: Into<f64>,
 {
     type Dist = f64;
 
-    fn str_distance<S, T>(&self, a: S, b: T) -> Self::Dist
+    /// Generic implementation of the metric.
+    fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
     where
-        S: AsRef<str>,
-        T: AsRef<str>,
+        S: IntoIterator,
+        T: IntoIterator,
+        <S as IntoIterator>::IntoIter: Clone,
+        <T as IntoIterator>::IntoIter: Clone,
+        <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
+        <T as IntoIterator>::Item: PartialEq,
     {
-        let (a, b) = order_by_len_asc(a.as_ref(), b.as_ref());
+        let a = a.into_iter();
+        let b = b.into_iter();
 
-        let len_a = a.chars().count();
-        let len_b = b.chars().count();
+        let len_a = a.clone().count();
+        let len_b = b.clone().count();
 
         if len_a == len_b {
-            return self.inner.str_distance(a, b).into();
+            return self.inner.distance(a.clone(), b.clone()).into();
         }
         if len_a == 0 {
             return 1.;
         }
 
-        let s2: Vec<_> = b.chars().collect();
+        let s2: Vec<_> = b.collect();
 
         for _qgram in QGramIter::new(&s2, len_a) {
             // let current = self.inner.distance(a,
             // std::str::from_utf8_unchecked(qgram.));
         }
-
-        0.
 
         // s1, s2 = reorder(s1, s2)
         // len1, len2 = length(s1), length(s2)
@@ -161,6 +179,29 @@ where
         // max_dist = min(out, max_dist)
         // end
         // return out
+
+        0.
+    }
+
+    fn str_distance<S, T>(&self, a: S, b: T) -> Self::Dist
+    where
+        S: AsRef<str>,
+        T: AsRef<str>,
+    {
+        let (a, b) = order_by_len_asc(a.as_ref(), b.as_ref());
+        self.distance(a.chars(), b.chars())
+    }
+
+    fn normalized<S, T>(&self, a: S, b: T) -> f64
+    where
+        S: IntoIterator,
+        T: IntoIterator,
+        <S as IntoIterator>::IntoIter: Clone,
+        <T as IntoIterator>::IntoIter: Clone,
+        <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
+        <T as IntoIterator>::Item: PartialEq,
+    {
+        self.distance(a, b)
     }
 }
 
