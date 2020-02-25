@@ -36,7 +36,7 @@ impl DistanceMetric for Jaro {
         let max_dist = cmp::max(s1_len, s2_len) / 2 - 1;
         let mut s1_matches = vec![false; s1_len];
         let mut s2_matches = vec![false; s2_len];
-        let mut m = 0usize;
+        let mut matches = 0usize;
 
         for i in 0..s1_len {
             let start = cmp::max(0, i as isize - max_dist as isize) as usize;
@@ -45,15 +45,15 @@ impl DistanceMetric for Jaro {
                 if !s2_matches[j] && s1[i] == s2[j] {
                     s1_matches[i] = true;
                     s2_matches[j] = true;
-                    m += 1;
+                    matches += 1;
                     break;
                 }
             }
         }
-        if m == 0 {
+        if matches == 0 {
             return 1.;
         }
-        let mut t = 0.0;
+        let mut transpositions = 0.0;
         let mut k = 0;
         for i in 0..s1_len {
             if s1_matches[i] {
@@ -61,13 +61,13 @@ impl DistanceMetric for Jaro {
                     k += 1;
                 }
                 if s1[i] != s2[k] {
-                    t += 0.5;
+                    transpositions += 0.5;
                 }
                 k += 1;
             }
         }
-        let m = m as f64;
-        1. - (m / s1_len as f64 + m / s2_len as f64 + (m - t) / m) / 3.0
+        let m = matches as f64;
+        1. - (m / s1_len as f64 + m / s2_len as f64 + (m - transpositions) / m) / 3.0
     }
 
     fn str_distance<S, T>(&self, s1: S, s2: T) -> Self::Dist

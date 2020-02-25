@@ -1,7 +1,7 @@
 use crate::DistanceMetric;
 
-/// A TokenSet distance modifies the distance of its `inner` `[Distance]` to
-/// adjust for differences in word orders and word numbers by comparing the
+/// A TokenSet distance modifies the distance of its `inner` [`DistanceMetric`]
+/// to adjust for differences in word orders and word numbers by comparing the
 /// intersection of two str with each str.
 ///
 /// http://chairnerd.seatgeek.com/fuzzywuzzy-fuzzy-string-matching-in-python/
