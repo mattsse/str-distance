@@ -1,6 +1,7 @@
 use crate::qgram::QGramIter;
 use crate::utils::order_by_len_asc;
-use crate::DistanceMetric;
+use crate::{DistanceMetric, RatcliffObershelp};
+use std::cmp;
 
 /// A TokenSet distance modifies the distance of its `inner` `[Distance]` to
 /// adjust for differences in word orders and word numbers by comparing the
@@ -157,30 +158,19 @@ where
         if len_a == len_b {
             return self.inner.distance(a.clone(), b.clone()).into();
         }
-        if len_a == 0 {
+        if cmp::min(len_a, len_b) == 0 {
             return 1.;
         }
 
-        let s2: Vec<_> = b.collect();
+        let s2: Vec<_> = b.clone().collect();
+        let mut out = 1.;
 
-        for _qgram in QGramIter::new(&s2, len_a) {
-            // let current = self.inner.distance(a,
-            // std::str::from_utf8_unchecked(qgram.));
+        for qgram in QGramIter::new(&s2, len_a) {
+            let current = self.inner.distance(a.clone(), b.clone()).into();
+            out = if out < current { out } else { current };
         }
 
-        // s1, s2 = reorder(s1, s2)
-        // len1, len2 = length(s1), length(s2)
-        // len1 == len2 && return dist.dist(s1, s2, max_dist)
-        // len1 == 0 && return 1.0
-        // out = 1.0
-        // for x in qgrams(s2, len1)
-        // curr = dist.dist(s1, x, max_dist)
-        // out = min(out, curr)
-        // max_dist = min(out, max_dist)
-        // end
-        // return out
-
-        0.
+        out
     }
 
     fn str_distance<S, T>(&self, a: S, b: T) -> Self::Dist
