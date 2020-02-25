@@ -194,6 +194,57 @@ where
         self.distance(a, b)
     }
 }
+/// `TokenSort` modifies the inner string distance `dist` to adjust for
+/// differences in word orders by reording words alphabetically.
+///
+/// For other types than strings this is just a delegate to the inner metric.
+pub struct TokenSort<D: DistanceMetric> {
+    /// The base distance to modify.
+    inner: D,
+}
+
+impl<D> DistanceMetric for TokenSort<D>
+where
+    D: DistanceMetric,
+{
+    type Dist = <D as DistanceMetric>::Dist;
+
+    fn distance<S, T>(&self, a: S, b: T) -> Self::Dist
+    where
+        S: IntoIterator,
+        T: IntoIterator,
+        <S as IntoIterator>::IntoIter: Clone,
+        <T as IntoIterator>::IntoIter: Clone,
+        <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
+        <T as IntoIterator>::Item: PartialEq,
+    {
+        self.inner.distance(a, b)
+    }
+
+    fn str_distance<S, T>(&self, a: S, b: T) -> Self::Dist
+    where
+        S: AsRef<str>,
+        T: AsRef<str>,
+    {
+        let mut a: Vec<_> = a.as_ref().split_whitespace().collect();
+        a.sort();
+        let mut b: Vec<_> = b.as_ref().split_whitespace().collect();
+        b.sort();
+        self.distance(a.join(" ").chars(), b.join(" ").chars())
+    }
+
+    fn normalized<S, T>(&self, a: S, b: T) -> f64
+    where
+        S: IntoIterator,
+        T: IntoIterator,
+        <S as IntoIterator>::IntoIter: Clone,
+        <T as IntoIterator>::IntoIter: Clone,
+        <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
+        <T as IntoIterator>::Item: PartialEq,
+    {
+        self.inner.normalized(a, b)
+    }
+}
 
 #[cfg(test)]
 mod tests {
