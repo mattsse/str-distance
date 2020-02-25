@@ -300,7 +300,7 @@ where
         if len_a + len_b == 0 {
             0.
         } else {
-            (val as f64) / len_a.max(len_b) as f64
+            (val as f64) / std::cmp::max(len_a, len_b) as f64
         }
     } else {
         1.

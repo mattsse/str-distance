@@ -1,4 +1,5 @@
 use crate::DistanceMetric;
+use std::cmp;
 
 /// Represents a QGram metric where `q` is the length of a q-gram fragment.
 ///
@@ -67,7 +68,7 @@ impl DistanceMetric for QGram {
         let len_a = a.clone().count();
         let len_b = a.clone().count();
 
-        if len_a.min(len_b) <= self.q {
+        if cmp::min(len_a, len_b) <= self.q {
             if a.eq(b) {
                 0.
             } else {
@@ -368,7 +369,7 @@ impl DistanceMetric for Overlap {
         let iter_b = QGramIter::new(&b, self.q);
 
         let (num_dist_a, num_dist_b, num_intersect) = count_distinct_intersect(iter_a, iter_b);
-        1.0 - num_intersect as f64 / num_dist_a.min(num_dist_b) as f64
+        1.0 - num_intersect as f64 / cmp::min(num_dist_a, num_dist_b) as f64
     }
 
     fn normalized<S, T>(&self, a: S, b: T) -> f64
@@ -467,7 +468,7 @@ where
     let len_a = a.clone().count();
     let len_b = b.clone().count();
 
-    if len_a.min(len_b) <= q {
+    if cmp::min(len_a, len_b) <= q {
         if a.eq(b) {
             0.
         } else {
