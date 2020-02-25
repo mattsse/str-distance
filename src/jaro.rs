@@ -89,6 +89,41 @@ impl DistanceMetric for Jaro {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct WinklerConfig {
+    /// Scaling factor. Default to 0.1
+    scaling: f64,
+    /// Boost threshold. Default to 0.7
+    threshold: f64,
+    /// max length of common prefix. Default to 4
+    max_length: usize,
+}
+
+impl WinklerConfig {
+    /// # Panics
+    ///
+    /// Panics if the scaling factor times maxlength of common prefix is higher
+    /// than one.
+    pub fn new(scaling: f64, threshold: f64, max_length: usize) -> Self {
+        assert!(scaling * max_length as f64 <= 1.);
+        Self {
+            scaling,
+            threshold,
+            max_length,
+        }
+    }
+}
+
+impl Default for WinklerConfig {
+    fn default() -> Self {
+        Self {
+            scaling: 0.1,
+            threshold: 0.7,
+            max_length: 4,
+        }
+    }
+}
+
 /// `Winkler` modifies a [`DistanceMetric`]'s distance to decrease the distance
 /// between  two strings, when their original distance is below some
 /// `threshold`. The boost is equal to `min(l,  maxlength) * p * dist` where `l`
@@ -99,17 +134,6 @@ impl DistanceMetric for Jaro {
 pub struct Winkler<D: DistanceMetric> {
     inner: D,
     config: WinklerConfig,
-    // TODO add max distance
-}
-
-#[derive(Debug, Clone)]
-pub struct WinklerConfig {
-    /// scaling factor. Default to 0.1
-    pub p: f64,
-    /// boost threshold. Default to 0.7
-    pub threshold: f64,
-    /// max length of common prefix. Default to 4
-    pub max_length: usize,
 }
 
 impl<D: DistanceMetric> Winkler<D> {
@@ -122,16 +146,6 @@ impl<D: DistanceMetric> Winkler<D> {
 
     pub fn with_config(inner: D, config: WinklerConfig) -> Self {
         Self { inner, config }
-    }
-}
-
-impl Default for WinklerConfig {
-    fn default() -> Self {
-        Self {
-            p: 0.1,
-            threshold: 0.7,
-            max_length: 4,
-        }
     }
 }
 
@@ -160,22 +174,18 @@ where
         <S as IntoIterator>::Item: PartialEq + PartialEq<<T as IntoIterator>::Item>,
         <T as IntoIterator>::Item: PartialEq,
     {
-        // scaling factor times maxlength of common prefix must be lower than one
-        assert!(self.config.p * self.config.max_length as f64 <= 1.);
+        let a = a.into_iter();
+        let b = b.into_iter();
 
-        // let a = a.into_iter();
-        // let b = b.into_iter();
-        // let mut dist = Jaro.distance(a.clone(),b.clone());
-        // let prefix_ctn = count_eq(a, b);
-        //
-        // dist += 0.1 * prefix_ctn as f64 * (1.0 - dist);
-        //
-        // if dist <= 1.0 {
-        //     0.0
-        // } else {
-        //     1.0
-        // }
-        unimplemented!()
+        let mut score = self.inner.distance(a.clone(), b.clone()).into();
+
+        if score <= 1. - self.config.threshold {
+            let eq_prefix = count_eq(a, b);
+            score -=
+                cmp::min(eq_prefix, self.config.max_length) as f64 * self.config.scaling * score;
+        }
+
+        score
     }
 
     fn str_distance<S, T>(&self, s1: S, s2: T) -> Self::Dist
