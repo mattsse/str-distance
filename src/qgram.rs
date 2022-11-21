@@ -66,7 +66,7 @@ impl DistanceMetric for QGram {
         let b = b.into_iter();
 
         let len_a = a.clone().count();
-        let len_b = a.clone().count();
+        let len_b = b.clone().count();
 
         if cmp::min(len_a, len_b) <= self.q {
             if a.eq(b) {
